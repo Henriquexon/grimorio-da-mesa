@@ -9,8 +9,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap">
 <style>
-/* Grimório: couro por fora, pergaminho por dentro, tinta sépia e rubricas em vermelho-sangue. */
-:root{
+/* Tema claro fixo. Grimório: couro por fora, pergaminho por dentro, tinta sépia e rubricas em vermelho-sangue. */
+:root,:root[data-theme="dark"]{
+  color-scheme:light;
   --leather:#3B2418; --leather-2:#5A3522; --page:#EFE2C4;
   --bg:#F7EDD5; --surface:#F4E7C8; --surface-2:#E6D4AB; --ink:#2A1C10; --muted:#6B5439; --line:#C7AD80;
   --accent:#7E1D1D; --accent-ink:#F8ECD1; --accent-soft:#EFD5C3;
@@ -24,28 +25,6 @@
   --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .32 0 0 0 0 .2 0 0 0 0 .08 0 0 0 .13 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   --blotch:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='700' height='700'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.006' numOctaves='4' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .3 0 0 0 0 .1 0 0 -1.1 0 .62'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23b)'/%3E%3C/svg%3E");
   --hide:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='l'%3E%3CfeTurbulence type='turbulence' baseFrequency='.045 .06' numOctaves='3' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -.9 .55'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23l)'/%3E%3C/svg%3E");
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    color-scheme:dark;
-    --leather:#150D09; --leather-2:#2A1A11; --page:#231911;
-    --bg:#1B130D; --surface:#2A1F15; --surface-2:#3A2B1D; --ink:#EBDDBB; --muted:#B49E79; --line:#4F3C27;
-    --accent:#E0806A; --accent-ink:#1E0D08; --accent-soft:#47221A;
-    --brass:#DAB560; --brass-soft:#3D2F16; --gold:#C9A04A; --ok:#9CC57F; --warn:#E8A067; --warn-soft:#432A17; --focus:#8CC8E0;
-    --s-abj:#6E9FDA; --s-adv:#A596DA; --s-con:#DDA35A; --s-enc:#DC7DB2; --s-evo:#EC7A5E; --s-ilu:#9C8CF0; --s-nec:#7FB282; --s-tra:#5BC0C0;
-    --stain:rgb(0 0 0 / .25); --edge:rgb(0 0 0 / .45);
-    --shadow:0 2px 8px rgb(0 0 0 / .35);
-  }
-}
-:root[data-theme="dark"]{
-  color-scheme:dark;
-  --leather:#150D09; --leather-2:#2A1A11; --page:#231911;
-  --bg:#1B130D; --surface:#2A1F15; --surface-2:#3A2B1D; --ink:#EBDDBB; --muted:#B49E79; --line:#4F3C27;
-  --accent:#E0806A; --accent-ink:#1E0D08; --accent-soft:#47221A;
-  --brass:#DAB560; --brass-soft:#3D2F16; --gold:#C9A04A; --ok:#9CC57F; --warn:#E8A067; --warn-soft:#432A17; --focus:#8CC8E0;
-  --s-abj:#6E9FDA; --s-adv:#A596DA; --s-con:#DDA35A; --s-enc:#DC7DB2; --s-evo:#EC7A5E; --s-ilu:#9C8CF0; --s-nec:#7FB282; --s-tra:#5BC0C0;
-  --stain:rgb(0 0 0 / .25); --edge:rgb(0 0 0 / .45);
-  --shadow:0 2px 8px rgb(0 0 0 / .35);
 }
 *{box-sizing:border-box}
 html{background:var(--leather)}
@@ -252,6 +231,13 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
 }
 .foot{margin-top:40px;color:var(--muted);font-size:.9rem;font-style:italic;text-align:center;border-top:1px solid var(--gold);padding-top:14px}
 .foot::before{content:"❦";display:block;color:var(--accent);font-style:normal;font-size:1.2rem;margin-bottom:4px}
+.inv-tip{position:fixed;z-index:50;max-width:min(340px,calc(100vw - 16px));padding:10px 14px 12px;background-color:var(--bg);background-image:var(--grain);border:1px solid var(--gold);border-radius:3px;
+  box-shadow:inset 0 0 0 3px var(--bg),inset 0 0 0 4px var(--line),0 8px 24px rgb(40 20 5 / .35);color:var(--ink);font-size:.95rem;line-height:1.45;pointer-events:none}
+.inv-tip b{display:block;font-family:var(--display);font-weight:400;font-size:1.1rem;color:var(--accent)}
+.inv-tip small{display:block;color:var(--muted);font-style:italic;font-size:.82rem}
+.inv-tip p{margin:6px 0 0}
+.check[data-tip]{border-radius:2px;padding-inline:4px}
+.check[data-tip]:hover{background:var(--surface-2)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -840,29 +826,77 @@ const PACTS = {
   tomo: { n: "Pacto do Tomo", picks: [{ key: "tomo", label: "Livro das Sombras: 3 truques de qualquer lista, não contam no limite", at: 3, count: 3, list: null, min: 0, max: 0 }] }
 };
 
-// ───── BRUXO: INVOCAÇÕES QUE CONCEDEM MAGIAS ─────
+// ───── BRUXO: INVOCAÇÕES MÍSTICAS (todas as 32 do Livro do Jogador) ─────
+// n: nome · d: descrição · min: nível mínimo de Bruxo · pact: dádiva exigida · eb: exige o truque Rajada Mística
+// sp/note/use: magia concedida · picks: escolhas extras de magias
 const AT_WILL = "Invocação · à vontade, sem gastar espaço de magia";
 const ONCE = "Invocação · 1x por descanso longo, usando um espaço de pacto";
 const INVOCATIONS = {
-  armadura: { n: "Armadura de Sombras", sp: "Mage Armor", note: "Invocação · à vontade em você mesmo, sem espaço nem componentes materiais" },
-  visao: { n: "Visão Mística", sp: "Detect Magic", note: AT_WILL },
-  fala: { n: "Fala Bestial", sp: "Speak with Animals", note: AT_WILL },
-  mascara: { n: "Máscara de Muitas Faces", sp: "Disguise Self", note: AT_WILL },
-  visoes: { n: "Visões Enevoadas", sp: "Silent Image", note: "Invocação · à vontade, sem espaço nem componentes materiais" },
-  vigor: { n: "Vigor Demoníaco", sp: "False Life", note: "Invocação · à vontade como magia de 1º nível, sem gastar espaço" },
-  ladrao: { n: "Ladrão dos Cinco Destinos", sp: "Bane", note: ONCE, use: 1 },
-  livro: { n: "Livro de Segredos Antigos", pact: "tomo", picks: [{ key: "livro", label: "Livro de Segredos Antigos: 2 rituais de 1º nível de qualquer lista (conjurados só como ritual)", count: 2, list: null, min: 1, max: 1, rit: true }] },
-  agouro: { n: "Sinal de Mau Agouro", min: 5, sp: "Bestow Curse", note: ONCE, use: 1 },
-  mente: { n: "Mente Atolada", min: 5, sp: "Slow", note: ONCE, use: 1 },
-  palavra: { n: "Palavra Terrível", min: 7, sp: "Confusion", note: ONCE, use: 1 },
-  escultor: { n: "Escultor da Carne", min: 7, sp: "Polymorph", note: ONCE, use: 1 },
-  salto: { n: "Salto Sobrenatural", min: 9, sp: "Jump", note: "Invocação · à vontade em você mesmo, sem gastar espaço" },
-  passo: { n: "Passo Ascendente", min: 9, sp: "Levitate", note: "Invocação · à vontade em você mesmo, sem gastar espaço" },
-  sussurros: { n: "Sussurros do Túmulo", min: 9, sp: "Speak with Dead", note: AT_WILL },
-  lacaios: { n: "Lacaios do Caos", min: 9, sp: "Conjure Elemental", note: ONCE, use: 1 },
-  miriades: { n: "Mestre das Miríades Formas", min: 15, sp: "Alter Self", note: AT_WILL },
-  reinos: { n: "Visões de Reinos Distantes", min: 15, sp: "Arcane Eye", note: AT_WILL },
-  carceri: { n: "Correntes de Carceri", min: 15, pact: "corrente", sp: "Hold Monster", note: "Invocação · à vontade contra celestiais, corruptores ou elementais, sem espaço; 1x por descanso longo contra a mesma criatura" }
+  agonizante: { n: "Explosão Agonizante", eb: true,
+    d: "Quando você conjura Rajada Mística, soma seu modificador de Carisma ao dano de cada raio que acertar." },
+  armadura: { n: "Armadura de Sombras", sp: "Mage Armor", note: "Invocação · à vontade em você mesmo, sem espaço nem componentes materiais",
+    d: "Você pode conjurar Armadura Arcana em si mesmo à vontade, sem gastar espaço de magia nem componentes materiais." },
+  passo: { n: "Passo Ascendente", min: 9, sp: "Levitate", note: "Invocação · à vontade em você mesmo, sem gastar espaço",
+    d: "Você pode conjurar Levitação em si mesmo à vontade, sem gastar espaço de magia nem componentes materiais." },
+  fala: { n: "Fala Bestial", sp: "Speak with Animals", note: AT_WILL,
+    d: "Você pode conjurar Falar com Animais à vontade, sem gastar espaço de magia." },
+  influencia: { n: "Influência Enganadora",
+    d: "Você ganha proficiência nas perícias Enganação e Persuasão." },
+  sedutores: { n: "Sussurros Sedutores", min: 7, sp: "Compulsion", note: ONCE, use: 1,
+    d: "Você pode conjurar Compulsão uma vez usando um espaço de magia de bruxo. Só volta a fazer isso depois de um descanso longo." },
+  livro: { n: "Livro de Segredos Antigos", pact: "tomo",
+    picks: [{ key: "livro", label: "Livro de Segredos Antigos: 2 rituais de 1º nível de qualquer lista (conjurados só como ritual)", count: 2, list: null, min: 1, max: 1, rit: true }],
+    d: "Você registra rituais no seu Livro das Sombras. Escolha dois rituais de 1º nível de qualquer lista de classe; eles ficam no livro e não contam como magias conhecidas. Com o livro em mãos, você pode conjurá-los só como ritual. Ao encontrar um ritual por escrito (pergaminho ou grimório) de nível até a metade do seu nível de bruxo (arredondado para cima), você pode copiá-lo para o livro: gasta 2 horas e 50 po por nível da magia em tintas raras." },
+  carceri: { n: "Correntes de Carceri", min: 15, pact: "corrente", sp: "Hold Monster", note: "Invocação · à vontade contra celestiais, corruptores ou elementais, sem espaço; 1x por descanso longo contra a mesma criatura",
+    d: "Você pode conjurar Imobilizar Monstro à vontade, mirando só celestiais, corruptores ou elementais, sem gastar espaço nem componentes materiais. Depois de conjurá-la numa criatura, só pode conjurá-la nela de novo após um descanso longo." },
+  diabolica: { n: "Visão Diabólica",
+    d: "Você enxerga normalmente na escuridão, tanto mágica quanto não mágica, até 36 metros." },
+  palavra: { n: "Palavra Terrível", min: 7, sp: "Confusion", note: ONCE, use: 1,
+    d: "Você pode conjurar Confusão uma vez usando um espaço de magia de bruxo. Só volta a fazer isso depois de um descanso longo." },
+  visao: { n: "Visão Mística", sp: "Detect Magic", note: AT_WILL,
+    d: "Você pode conjurar Detectar Magia à vontade, sem gastar espaço de magia." },
+  lanca: { n: "Lança Mística", eb: true,
+    d: "O alcance da sua Rajada Mística passa a ser 90 metros." },
+  runas: { n: "Olhos do Guardião das Runas",
+    d: "Você consegue ler qualquer escrita." },
+  vigor: { n: "Vigor Demoníaco", sp: "False Life", note: "Invocação · à vontade como magia de 1º nível, sem gastar espaço",
+    d: "Você pode conjurar Vitalidade Falsa em si mesmo à vontade, como magia de 1º nível, sem gastar espaço de magia nem componentes materiais." },
+  olhar: { n: "Olhar de Duas Mentes",
+    d: "Com uma ação, você toca um humanoide voluntário e passa a perceber pelos sentidos dele até o fim do seu próximo turno. Enquanto ele estiver no mesmo plano que você, pode usar sua ação nos turnos seguintes para manter a conexão. Durante a conexão, você fica cego e surdo para o que está ao seu redor e se beneficia dos sentidos especiais da criatura." },
+  bebedor: { n: "Bebedor de Vida", min: 12, pact: "lamina",
+    d: "Quando você acerta uma criatura com sua arma de pacto, ela sofre dano necrótico extra igual ao seu modificador de Carisma (mínimo 1)." },
+  mascara: { n: "Máscara de Muitas Faces", sp: "Disguise Self", note: AT_WILL,
+    d: "Você pode conjurar Disfarçar-se à vontade, sem gastar espaço de magia." },
+  miriades: { n: "Mestre das Miríades Formas", min: 15, sp: "Alter Self", note: AT_WILL,
+    d: "Você pode conjurar Alterar-se à vontade, sem gastar espaço de magia." },
+  lacaios: { n: "Lacaios do Caos", min: 9, sp: "Conjure Elemental", note: ONCE, use: 1,
+    d: "Você pode conjurar Conjurar Elemental uma vez usando um espaço de magia de bruxo. Só volta a fazer isso depois de um descanso longo." },
+  mente: { n: "Mente Atolada", min: 5, sp: "Slow", note: ONCE, use: 1,
+    d: "Você pode conjurar Lentidão uma vez usando um espaço de magia de bruxo. Só volta a fazer isso depois de um descanso longo." },
+  visoes: { n: "Visões Enevoadas", sp: "Silent Image", note: "Invocação · à vontade, sem espaço nem componentes materiais",
+    d: "Você pode conjurar Imagem Silenciosa à vontade, sem gastar espaço de magia nem componentes materiais." },
+  sombras: { n: "Um com as Sombras", min: 5,
+    d: "Quando está numa área de penumbra ou escuridão, você pode usar sua ação para ficar invisível até se mover ou fazer uma ação ou reação." },
+  salto: { n: "Salto Sobrenatural", min: 9, sp: "Jump", note: "Invocação · à vontade em você mesmo, sem gastar espaço",
+    d: "Você pode conjurar Salto em si mesmo à vontade, sem gastar espaço de magia nem componentes materiais." },
+  repulsiva: { n: "Explosão Repulsiva", eb: true,
+    d: "Quando você acerta uma criatura com Rajada Mística, pode empurrá-la até 3 metros para longe de você, em linha reta." },
+  escultor: { n: "Escultor da Carne", min: 7, sp: "Polymorph", note: ONCE, use: 1,
+    d: "Você pode conjurar Metamorfose uma vez usando um espaço de magia de bruxo. Só volta a fazer isso depois de um descanso longo." },
+  agouro: { n: "Sinal de Mau Agouro", min: 5, sp: "Bestow Curse", note: ONCE, use: 1,
+    d: "Você pode conjurar Rogar Maldição uma vez usando um espaço de magia de bruxo. Só volta a fazer isso depois de um descanso longo." },
+  ladrao: { n: "Ladrão dos Cinco Destinos", sp: "Bane", note: ONCE, use: 1,
+    d: "Você pode conjurar Perdição uma vez usando um espaço de magia de bruxo. Só volta a fazer isso depois de um descanso longo." },
+  sedenta: { n: "Lâmina Sedenta", min: 5, pact: "lamina",
+    d: "Quando usa a ação de Ataque no seu turno, você pode atacar duas vezes com sua arma de pacto, em vez de uma." },
+  reinos: { n: "Visões de Reinos Distantes", min: 15, sp: "Arcane Eye", note: AT_WILL,
+    d: "Você pode conjurar Olho Arcano à vontade, sem gastar espaço de magia." },
+  voz: { n: "Voz do Mestre das Correntes", pact: "corrente",
+    d: "Você pode se comunicar telepaticamente com seu familiar e perceber pelos sentidos dele enquanto estiverem no mesmo plano. Enquanto percebe pelos sentidos dele, também pode falar pela boca do familiar com a sua própria voz, mesmo que ele normalmente não fale." },
+  sussurros: { n: "Sussurros do Túmulo", min: 9, sp: "Speak with Dead", note: AT_WILL,
+    d: "Você pode conjurar Falar com os Mortos à vontade, sem gastar espaço de magia." },
+  bruxa: { n: "Visão Bruxa", min: 15,
+    d: "Você vê a forma verdadeira de qualquer metamorfo ou criatura oculta por magia de ilusão ou transmutação que esteja na sua linha de visão, a até 9 metros." }
 };
 
 /* Interface do Grimório da Mesa. */
@@ -944,7 +978,10 @@ function abilityKey(c) {
 }
 const abMod = c => Math.floor(((+c.score || 10) - 10) / 2);
 const prof = c => 2 + Math.floor((c.level - 1) / 4);
-function invOk(c, iv) { return c.cls === "bruxo" && c.level >= (iv.min || 2) && (!iv.pact || (c.pact === iv.pact && c.level >= 3)); }
+function invOk(c, iv) {
+  return c.cls === "bruxo" && c.level >= (iv.min || 2) && (!iv.pact || (c.pact === iv.pact && c.level >= 3))
+    && (!iv.eb || c.spells.some(x => x.id === "eldritch-blast"));
+}
 
 function grants(c) {
   const out = [], L = c.level;
@@ -1097,10 +1134,10 @@ function renderSheet() {
   if (c.cls === "bruxo") {
     h += `<label class="field"><span>Dádiva do Pacto</span><select id="f-pact"><option value="">Nenhuma</option>${Object.keys(PACTS).map(k => opt(k, PACTS[k].n, c.pact)).join("")}</select>${c.level < 3 ? '<small class="hint warn">Recebida no 3º nível.</small>' : ""}</label>`;
     const n = CLASSES.bruxo.invocations[c.level - 1];
-    h += `<fieldset class="field inv"><legend>Invocações Místicas</legend><small class="hint">${n ? `Você conhece ${n} neste nível. ` : "Recebidas a partir do 2º nível. "}A lista mostra só as que concedem magias.</small><div class="inv-list">${Object.keys(INVOCATIONS).map(k => {
+    h += `<fieldset class="field inv"><legend>Invocações Místicas</legend><small class="hint">${n ? `Você conhece ${n} neste nível. ` : "Recebidas a partir do 2º nível. "}Passe o mouse sobre uma invocação para ler a descrição.</small><div class="inv-list">${Object.keys(INVOCATIONS).sort((a, b) => INVOCATIONS[a].n.localeCompare(INVOCATIONS[b].n)).map(k => {
       const iv = INVOCATIONS[k], ok = invOk(c, iv), on = c.inv.includes(k);
-      const req = [iv.min ? `${iv.min}º nível` : "", iv.pact ? PACTS[iv.pact].n : ""].filter(Boolean).join(", ");
-      return `<label class="check${ok ? "" : " locked"}"><input type="checkbox" data-inv="${k}"${on ? " checked" : ""}${ok || on ? "" : " disabled"}><span>${esc(iv.n)}${req ? `<small>${esc(req)}</small>` : ""}</span></label>`;
+      const req = [iv.min ? `${iv.min}º nível` : "", iv.pact ? PACTS[iv.pact].n : "", iv.eb ? "Rajada Mística" : ""].filter(Boolean).join(", ");
+      return `<label class="check${ok ? "" : " locked"}" data-tip="${k}"><input type="checkbox" data-inv="${k}"${on ? " checked" : ""}${ok || on ? "" : " disabled"}><span>${esc(iv.n)}${req ? `<small>Pré-requisito: ${esc(req)}</small>` : ""}</span></label>`;
     }).join("")}</div></fieldset>`;
   }
   h += `<div class="sheet-actions"><button type="button" class="btn ghost" data-act="export">Exportar</button><button type="button" class="btn ghost" data-act="import">Importar</button>`
@@ -1426,6 +1463,29 @@ document.addEventListener("change", e => {
   else if (t.id === "c-conc") { ui.conc = t.checked; renderAllList(); }
   else if (t.id === "c-rit") { ui.rit = t.checked; renderAllList(); }
 });
+
+// ───── Descrição das invocações ao passar o mouse ─────
+const tipEl = document.createElement("div");
+tipEl.id = "inv-tip"; tipEl.className = "inv-tip"; tipEl.setAttribute("role", "tooltip"); tipEl.hidden = true;
+document.body.appendChild(tipEl);
+let tipFor = null;
+function showTip(label) {
+  tipFor = label;
+  const iv = INVOCATIONS[label.dataset.tip];
+  if (!iv) return;
+  const req = [iv.min ? `${iv.min}º nível de bruxo` : "", iv.pact ? PACTS[iv.pact].n : "", iv.eb ? "truque Rajada Mística" : ""].filter(Boolean).join(", ");
+  tipEl.innerHTML = `<b>${esc(iv.n)}</b>${req ? `<small>Pré-requisito: ${esc(req)}</small>` : ""}<p>${esc(iv.d)}</p>`;
+  tipEl.hidden = false;
+  const r = label.getBoundingClientRect(), w = tipEl.offsetWidth, h = tipEl.offsetHeight, vw = innerWidth, vh = innerHeight;
+  let x = r.right + 12, y = r.top - 6;
+  if (x + w > vw - 8) { x = Math.max(8, Math.min(r.left, vw - w - 8)); y = r.bottom + 8; if (y + h > vh - 8) y = r.top - h - 8; }
+  tipEl.style.left = x + "px"; tipEl.style.top = Math.max(8, Math.min(y, vh - h - 8)) + "px";
+}
+const hideTip = () => { tipEl.hidden = true; tipFor = null; };
+document.addEventListener("mouseover", e => { const l = e.target.closest("[data-tip]"); if (l) showTip(l); });
+document.addEventListener("mouseout", e => { const l = e.target.closest("[data-tip]"); if (l && !l.contains(e.relatedTarget)) hideTip(); });
+document.addEventListener("focusin", e => { const l = e.target.closest("[data-tip]"); l ? showTip(l) : hideTip(); });
+document.addEventListener("scroll", () => { if (tipFor && tipFor.isConnected && tipFor.matches(":hover, :focus-within")) showTip(tipFor); else hideTip(); }, true);
 
 renderAll();
 
