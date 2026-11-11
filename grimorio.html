@@ -792,10 +792,10 @@ const CLASSES = {
     known: [2,3,4,5,6,7,8,9,10,10,11,11,12,12,13,13,14,14,15,15],
     invocations: [0,2,2,3,3,4,4,5,5,5,5,6,6,6,7,7,7,8,8,8],
     picks: [
-      { key: "arc6", label: "Arcana Mística: 1 magia de 6º nível (1x por descanso longo)", at: 11, count: 1, list: "Bu", min: 6, max: 6, arcana: true },
-      { key: "arc7", label: "Arcana Mística: 1 magia de 7º nível (1x por descanso longo)", at: 13, count: 1, list: "Bu", min: 7, max: 7, arcana: true },
-      { key: "arc8", label: "Arcana Mística: 1 magia de 8º nível (1x por descanso longo)", at: 15, count: 1, list: "Bu", min: 8, max: 8, arcana: true },
-      { key: "arc9", label: "Arcana Mística: 1 magia de 9º nível (1x por descanso longo)", at: 17, count: 1, list: "Bu", min: 9, max: 9, arcana: true } ],
+      { key: "arc6", label: "Arcana Mística de 6º nível: 1 magia (1x por descanso longo)", at: 11, count: 1, list: "Bu", min: 6, max: 6, arcana: true },
+      { key: "arc7", label: "Arcana Mística de 7º nível: 1 magia (1x por descanso longo)", at: 13, count: 1, list: "Bu", min: 7, max: 7, arcana: true },
+      { key: "arc8", label: "Arcana Mística de 8º nível: 1 magia (1x por descanso longo)", at: 15, count: 1, list: "Bu", min: 8, max: 8, arcana: true },
+      { key: "arc9", label: "Arcana Mística de 9º nível: 1 magia (1x por descanso longo)", at: 17, count: 1, list: "Bu", min: 9, max: 9, arcana: true } ],
     subAt: 1, subTitle: "Patrono Transcendental", subs: {
       arquifada: { n: "A Arquifada", exp: { 1: ["Faerie Fire", "Sleep"], 2: ["Calm Emotions", "Phantasmal Force"], 3: ["Blink", "Plant Growth"], 4: ["Dominate Beast", "Greater Invisibility"], 5: ["Dominate Person", "Seeming"] } },
       corruptor: { n: "O Corruptor", exp: { 1: ["Burning Hands", "Command"], 2: ["Blindness/Deafness", "Scorching Ray"], 3: ["Fireball", "Stinking Cloud"], 4: ["Fire Shield", "Wall of Fire"], 5: ["Flame Strike", "Hallow"] } },
@@ -1063,7 +1063,7 @@ function cur() {
 }
 
 const ui = { activeClass: "", multiclassOpen: false, tab: "grim", mode: "class", q: "", lvl: "all", school: "", cq: "", clvl: "all", ccls: "", cschool: "", conc: false, rit: false, panel: null, confirmDel: false };
-try { const t = localStorage.getItem(KEY + "-tab"); if (["grim", "add", "inv", "all"].includes(t)) ui.tab = t; } catch (e) {}
+try { const t = localStorage.getItem(KEY + "-tab"); if (["grim", "add", "inv", "arc", "all"].includes(t)) ui.tab = t; } catch (e) {}
 
 // ───── Regras ─────
 function raceSub(c) { const R = RACES[c.race]; return R.subs ? R.subs[c.sub] || null : null; }
@@ -1323,7 +1323,8 @@ function renderSheet() {
     </details>`;
   if (c.cls === "bruxo") {
     h += `<label class="field"><span>Dádiva do Pacto</span><select id="f-pact"><option value="">Nenhuma</option>${Object.keys(PACTS).map(k => opt(k, PACTS[k].n, c.pact)).join("")}</select>${c.level < 3 ? '<small class="hint warn">Recebida no 3º nível.</small>' : ""}</label>`;
-    h += `<button type="button" class="btn ghost" data-act="tab" data-tab="inv">Gerenciar Invocações Místicas</button>`;
+    h += `<button type="button" class="btn ghost" data-act="tab" data-tab="inv">Gerenciar Invocações Místicas</button>
+      <button type="button" class="btn ghost" data-act="tab" data-tab="arc">Gerenciar Arcanas Místicas</button>`;
   }
   h += `<div class="sheet-actions"><button type="button" class="btn ghost" data-act="export">Exportar</button><button type="button" class="btn ghost" data-act="import">Importar</button>`
     + (ui.confirmDel ? `<button type="button" class="btn danger" data-act="del-yes">Confirmar exclusão</button><button type="button" class="btn ghost" data-act="del-no">Cancelar</button>`
@@ -1385,8 +1386,8 @@ function renderSlots(c) {
 function renderMain() {
   const c = cur();
   const tabs = [["grim", "Grimório"], ["add", "Adicionar magias"]];
-  if (c.cls === "bruxo") tabs.push(["inv", "Invocações Místicas"]);
-  else if (ui.tab === "inv") ui.tab = "grim";
+  if (c.cls === "bruxo") tabs.push(["inv", "Invocações Místicas"], ["arc", "Arcanas Místicas"]);
+  else if (ui.tab === "inv" || ui.tab === "arc") ui.tab = "grim";
   tabs.push(["all", "Compêndio"]);
   $("#main").innerHTML = renderSummary(c)
     + `<div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" class="tab${ui.tab === k ? " on" : ""}" aria-selected="${ui.tab === k}" data-act="tab" data-tab="${k}">${l}</button>`).join("")}</div>
@@ -1398,6 +1399,7 @@ function renderTab() {
   if (ui.tab === "grim") b.innerHTML = renderGrim(c);
   else if (ui.tab === "add") { b.innerHTML = renderAddShell(c); renderAddList(); }
   else if (ui.tab === "inv") b.innerHTML = renderInvocations(c);
+  else if (ui.tab === "arc") b.innerHTML = renderArcana(c);
   else { b.innerHTML = renderAllShell(); renderAllList(); }
 }
 const sortedInvocations = Object.entries(INVOCATIONS).sort(([, a], [, b]) => a.n.localeCompare(b.n, "pt-BR"));
@@ -1412,6 +1414,27 @@ function renderInvocations(c) {
       <p>${esc(iv.d)}</p>
     </article>`;
   }).join("");
+}
+function arcanaUseButton(c, sp) {
+  const used = !!c.used.arc[sp.id];
+  return `<button type="button" class="use${used ? " on" : ""}" data-act="use-arc" data-id="${sp.id}" aria-pressed="${used}" aria-label="${esc((used ? "Marcar como disponível: " : "Marcar como usada: ") + sp.n)}">${used ? "Usada" : "Disponível"}</button>`;
+}
+function renderArcana(c) {
+  const groups = CLASSES.bruxo.picks.filter(p => p.arcana).map(p => {
+    const unlocked = c.level >= p.at;
+    const chosen = c.spells.filter(x => x.via === p.key);
+    const heading = `<h3 class="group-title">${p.min}º círculo <small>${unlocked ? chosen.length + "/" + p.count : "Bruxo " + p.at}</small></h3>`;
+    if (!unlocked) return `<section class="group">${heading}<p class="hint">Disponível no ${p.at}º nível de Bruxo.</p></section>`;
+    const selected = new Set(chosen.map(x => x.id));
+    const list = candidates(c, p.key).filter(sp => !hasSpell(c, sp.id, p.key) || selected.has(sp.id));
+    return `<section class="group">${heading}${list.map(sp => {
+      const on = selected.has(sp.id);
+      const action = on ? arcanaUseButton(c, sp) + `<button type="button" class="btn sm ghost" data-act="rm" data-id="${sp.id}" data-via="${p.key}">Remover</button>`
+        : `<button type="button" class="btn sm" data-act="add-arc" data-id="${sp.id}" data-via="${p.key}">Adicionar</button>`;
+      return spellRow(sp, { action, rowKey: p.key, badges: on ? [{ t: "Escolhida", cls: "pick" }] : [] });
+    }).join("")}</section>`;
+  }).join("");
+  return `<p class="mode-info">Cada arcana pode ser conjurada uma vez sem gastar espaço de magia e volta após um descanso longo.</p>${groups}`;
 }
 function refreshSummary() { const s = $(".summary"); if (s) s.outerHTML = renderSummary(cur()); }
 
@@ -1451,10 +1474,7 @@ function renderGrim(c) {
         const on = c.prep.includes(sp.id);
         act += `<button type="button" class="btn sm${on ? "" : " ghost"}" data-act="prep" data-id="${sp.id}" aria-pressed="${on}">${on ? "Preparada" : "Preparar"}</button>`;
       }
-      if (pk[x.via] && pk[x.via].arcana) {
-        const used = !!c.used.arc[sp.id];
-        act += `<button type="button" class="use${used ? " on" : ""}" data-act="use-arc" data-id="${sp.id}" aria-pressed="${used}">${used ? "Usada" : "Disponível"}</button>`;
-      }
+      if (pk[x.via]?.arcana) act += arcanaUseButton(c, sp);
       act += `<button type="button" class="btn sm ghost" data-act="rm" data-id="${sp.id}" data-via="${esc(x.via)}" aria-label="Remover ${esc(sp.n)}">Remover</button>`;
       const discipline = pk[x.via]?.spells?.[sp.en];
       const note = discipline ? `Custa ${discipline[1]} pontos de chi${discipline[2] ? " · " + discipline[2] : ""} · sem componentes materiais` : isBookRitual(x.via) ? "Livro de Segredos Antigos · apenas como ritual" : "";
@@ -1468,7 +1488,7 @@ function renderGrim(c) {
 function modes(c) {
   const ci = castInfo(c), m = [];
   if (ci) m.push({ key: "class", label: `Lista de ${ci.n}` });
-  picks(c).forEach(p => m.push({ key: p.key, label: p.label.split(":")[0], p }));
+  picks(c).filter(p => !p.arcana).forEach(p => m.push({ key: p.key, label: p.label.split(":")[0], p }));
   return m;
 }
 function renderAddShell(c) {
@@ -1645,9 +1665,26 @@ document.addEventListener("click", e => {
       break;
     }
     case "short": c.used.pact = 0; save(); refreshSummary(); break;
-    case "long": c.used = blankUsed(); save(); refreshSummary(); if (ui.tab === "grim") keepOpen($("#tabbody"), renderTab); break;
+    case "long": c.used = blankUsed(); save(); refreshSummary(); if (ui.tab === "grim" || ui.tab === "arc") keepOpen($("#tabbody"), renderTab); break;
     case "use-g": c.used.g[t.dataset.key] = !c.used.g[t.dataset.key]; save(); keepOpen($("#tabbody"), renderTab); break;
-    case "use-arc": c.used.arc[t.dataset.id] = !c.used.arc[t.dataset.id]; save(); keepOpen($("#tabbody"), renderTab); break;
+    case "use-arc": {
+      const id = t.dataset.id;
+      if (!picks(c).some(p => p.arcana && c.spells.some(x => x.id === id && x.via === p.key))) break;
+      c.used.arc[id] = !c.used.arc[id];
+      save(); keepOpen($("#tabbody"), renderTab);
+      $(`[data-act="use-arc"][data-id="${id}"]`)?.focus({ preventScroll: true });
+      break;
+    }
+    case "add-arc": {
+      const { id, via } = t.dataset;
+      if (!picks(c).some(p => p.arcana && p.key === via) || hasSpell(c, id, via) || !candidates(c, via).some(sp => sp.id === id)) break;
+      const before = counters(c);
+      c.spells.push({ id, via });
+      save(); refreshSummary(); keepOpen($("#tabbody"), renderTab);
+      $(`[data-act="use-arc"][data-id="${id}"]`)?.focus({ preventScroll: true });
+      warnLimits(c, before);
+      break;
+    }
     case "add": {
       if (hasSpell(c, t.dataset.id, ui.mode) || !candidates(c, ui.mode).some(sp => sp.id === t.dataset.id)) break;
       const before = counters(c);
