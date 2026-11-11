@@ -72,6 +72,15 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
 @media (max-width:880px){.layout{grid-template-columns:minmax(0,1fr)}}
 .panel{background-color:var(--surface);background-image:var(--grain);border:1px solid var(--line);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow), inset 0 0 26px var(--stain)}
 #sheet{display:flex;flex-direction:column;gap:16px;position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}
+@media (min-width:881px){
+  #sheet{
+    max-height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 24px);
+    max-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - 24px);
+    overflow-y:auto;
+    overscroll-behavior-y:contain;
+    scrollbar-gutter:stable;
+  }
+}
 @media (max-width:880px){#sheet{position:static}}
 .panel-title{font-size:1.45rem;color:var(--accent);border-bottom:1px solid var(--line);padding-bottom:6px}
 
@@ -243,7 +252,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
     <nav id="chips" class="chips" aria-label="Personagens"></nav>
   </header>
   <div class="layout">
-    <aside id="sheet"></aside>
+    <aside id="sheet" aria-label="Ficha do personagem" tabindex="0"></aside>
     <main id="main"></main>
   </div>
   <p class="foot">Descrições resumidas com base no Livro do Jogador de D&amp;D 5e. Consulte o livro para o texto completo de cada magia. As fichas ficam salvas só neste navegador.</p>
