@@ -8,6 +8,7 @@ Grimório de magias de D&D 5ª edição em português, feito para a nossa mesa.
 
 - As 361 magias do Livro do Jogador, com busca e filtros por classe, escola, nível, concentração e ritual.
 - Fichas de personagem: escolha raça, classe, subclasse e nível. As magias concedidas (Tiefling, patrono do Bruxo, juramento do Paladino, invocações, pactos) entram sozinhas.
+- Multiclasse com espaços de conjuração compartilhados, espaços de pacto separados e magias escolhidas por classe. Na ficha, abra **Multiclasse** e informe os atributos exigidos para adicionar outra classe.
 - Contadores de truques, magias conhecidas/preparadas e invocações.
 - Espaços de magia com descanso curto e longo.
 - Exportar e importar fichas para levar de um aparelho para outro.
