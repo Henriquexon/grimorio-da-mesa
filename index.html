@@ -1290,7 +1290,7 @@ function renderSummary(c) {
 function pipRow(label, n, used, kind, lv) {
   used = Math.min(used, n);
   let p = "";
-  for (let i = 0; i < n; i++) p += `<button type="button" class="pip${i < used ? " used" : ""}" data-act="pip" data-kind="${kind}" data-lv="${lv}" data-i="${i}" data-n="${n}" aria-pressed="${i < used}" aria-label="Espaço ${i + 1}${i < used ? ", gasto" : ", disponível"}"></button>`;
+  for (let i = n - 1; i >= 0; i--) p += `<button type="button" class="pip${i < used ? " used" : ""}" data-act="pip" data-kind="${kind}" data-lv="${lv}" data-i="${i}" data-n="${n}" aria-pressed="${i < used}" aria-label="Espaço ${i + 1}${i < used ? ", gasto" : ", disponível"}"></button>`;
   return `<div class="slot-row"><span class="slot-lab">${label}</span><span class="pips">${p}</span><span class="slot-left">${n - used}/${n}</span></div>`;
 }
 function renderSlots(c) {
@@ -1301,7 +1301,7 @@ function renderSlots(c) {
   return `<div class="slots"><div class="slots-head"><h3>Espaços de magia</h3><div class="rest">`
     + (pact ? `<button type="button" class="btn ghost sm" data-act="short">Descanso curto</button>` : "")
     + `<button type="button" class="btn ghost sm" data-act="long">Descanso longo</button></div></div><div class="slot-rows">${rows}</div>
-    <p class="hint">Cada clique gasta ou devolve um espaço. ${pact ? "Espaços de pacto voltam no descanso curto." : "Tudo volta no descanso longo."}</p>
+    ${pact ? '<p class="hint">Espaços de pacto voltam no descanso curto.</p>' : ""}
     ${slots.length && pact ? '<p class="hint">Espaços de pacto e de conjuração podem ser usados para magias conhecidas ou preparadas de ambas as classes.</p>' : ""}</div>`;
 }
 
