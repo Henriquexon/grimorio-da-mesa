@@ -841,14 +841,14 @@ const CLASSES = {
 
   guerreiro: { n: "Guerreiro", subAt: 3, subTitle: "Arquétipo Marcial", subs: {
     campeao: { n: "Campeão" }, mestre: { n: "Mestre de Batalha" },
-    cavaleiro: { n: "Cavaleiro Arcano", cast: { n: "Cavaleiro Arcano", list: "Ma", type: "third", ab: "int",
+    cavaleiro: { n: "Cavaleiro Arcano", cast: { n: "Cavaleiro Arcano", list: "Ma", type: "third", ab: "int", schools: ["abj", "evo"],
       cant: l => (l < 3 ? 0 : l < 10 ? 2 : 3), known: THIRD_KNOWN,
       note: "Magias da lista de Mago, quase todas de Abjuração ou Evocação. Só as escolhidas nos níveis 3, 8, 14 e 20 podem ser de qualquer escola." } } } },
 
   ladino: { n: "Ladino", subAt: 3, subTitle: "Arquétipo de Ladino", subs: {
     ladrao: { n: "Ladrão" }, assassino: { n: "Assassino" },
     trapaceiro: { n: "Trapaceiro Arcano", grants: [{ sp: "Mage Hand", at: 3, note: "Prestidigitação com Mãos Mágicas · mão invisível e mais versátil" }],
-      cast: { n: "Trapaceiro Arcano", list: "Ma", type: "third", ab: "int",
+      cast: { n: "Trapaceiro Arcano", list: "Ma", type: "third", ab: "int", schools: ["enc", "ilu"],
         cant: l => (l < 3 ? 0 : l < 10 ? 2 : 3), known: THIRD_KNOWN,
         note: "Magias da lista de Mago, quase todas de Encantamento ou Ilusão. Só as escolhidas nos níveis 3, 8, 14 e 20 podem ser de qualquer escola." } } } },
 
@@ -868,7 +868,16 @@ const CLASSES = {
       { sp: "Darkvision", at: 3, note: "Artes das Sombras · custa 2 pontos de ki" },
       { sp: "Pass without Trace", at: 3, note: "Artes das Sombras · custa 2 pontos de ki" },
       { sp: "Silence", at: 3, note: "Artes das Sombras · custa 2 pontos de ki" } ] },
-    elementos: { n: "Caminho dos Quatro Elementos" } } },
+    elementos: { n: "Caminho dos Quatro Elementos", picks: [{
+      key: "disciplina", label: "Disciplinas elementais: magias escolhidas, conjuradas com chi",
+      count: l => [3, 6, 11, 17].filter(level => level <= l).length,
+      spells: {
+        "Thunderwave": [3, 2], "Burning Hands": [3, 2], "Gust of Wind": [3, 2],
+        "Hold Person": [6, 3], "Shatter": [6, 3],
+        "Fly": [11, 4, "em você mesmo"], "Fireball": [11, 4], "Gaseous Form": [11, 4, "em você mesmo"],
+        "Stoneskin": [17, 5, "em você mesmo"], "Wall of Fire": [17, 5], "Wall of Stone": [17, 6], "Cone of Cold": [17, 6]
+      }
+    }] } } },
 
   paladino: { n: "Paladino", list: "Pa", type: "half", ab: "car", prep: "half",
     subAt: 3, subTitle: "Juramento Sagrado", subs: {
@@ -898,18 +907,19 @@ const INVOCATIONS = {
     d: "Quando você conjura Rajada Mística, soma seu modificador de Carisma ao dano de cada raio que acertar." },
   armadura: { n: "Armadura de Sombras", sp: "Mage Armor", note: "Invocação · à vontade em você mesmo, sem espaço nem componentes materiais",
     d: "Você pode conjurar Armadura Arcana em si mesmo à vontade, sem gastar espaço de magia nem componentes materiais." },
-  passo: { n: "Passo Ascendente", min: 9, sp: "Levitate", note: "Invocação · à vontade em você mesmo, sem gastar espaço",
+  passo: { n: "Passo Ascendente", min: 9, sp: "Levitate", note: "Invocação · à vontade em você mesmo, sem gastar espaço nem componentes materiais",
     d: "Você pode conjurar Levitação em si mesmo à vontade, sem gastar espaço de magia nem componentes materiais." },
-  fala: { n: "Fala Bestial", sp: "Speak with Animals", note: AT_WILL,
+  fala: { n: "Idioma Bestial", sp: "Speak with Animals", note: AT_WILL,
     d: "Você pode conjurar Falar com Animais à vontade, sem gastar espaço de magia." },
   influencia: { n: "Influência Enganadora",
     d: "Você ganha proficiência nas perícias Enganação e Persuasão." },
   sedutores: { n: "Sussurros Sedutores", min: 7, sp: "Compulsion", note: ONCE, use: 1,
     d: "Você pode conjurar Compulsão uma vez usando um espaço de magia de bruxo. Só volta a fazer isso depois de um descanso longo." },
   livro: { n: "Livro de Segredos Antigos", pact: "tomo",
-    picks: [{ key: "livro", label: "Livro de Segredos Antigos: 2 rituais de 1º nível de qualquer lista (conjurados só como ritual)", count: 2, list: null, min: 1, max: 1, rit: true }],
-    d: "Você registra rituais no seu Livro das Sombras. Escolha dois rituais de 1º nível de qualquer lista de classe; eles ficam no livro e não contam como magias conhecidas. Com o livro em mãos, você pode conjurá-los só como ritual. Ao encontrar um ritual por escrito (pergaminho ou grimório) de nível até a metade do seu nível de bruxo (arredondado para cima), você pode copiá-lo para o livro: gasta 2 horas e 50 po por nível da magia em tintas raras." },
-  carceri: { n: "Correntes de Carceri", min: 15, pact: "corrente", sp: "Hold Monster", note: "Invocação · à vontade contra celestiais, corruptores ou elementais, sem espaço; 1x por descanso longo contra a mesma criatura",
+    picks: [{ key: "livro", label: "Livro de Segredos Antigos: 2 rituais de 1º nível de qualquer lista (conjurados só como ritual)", count: 2, list: null, min: 1, max: 1, rit: true },
+      { key: "livro-copia", label: "Rituais transcritos: encontrados durante a aventura (2 horas e 50 po por círculo)", count: Infinity, min: 1, max: "ritual-book", rit: true }],
+    d: "Você registra rituais no seu Livro das Sombras. Escolha dois rituais de 1º nível de qualquer lista de classe; eles ficam no livro e não contam como magias conhecidas. Com o livro em mãos, você pode conjurá-los só como ritual. Magias de Bruxo conhecidas com o descritor ritual também podem ser conjuradas assim. Ao encontrar um ritual por escrito (pergaminho ou grimório) de nível até a metade do seu nível de bruxo (arredondado para baixo nesta tradução), você pode copiá-lo para o livro: gasta 2 horas e 50 po por nível da magia em tintas raras." },
+  carceri: { n: "Correntes de Cárceri", min: 15, pact: "corrente", sp: "Hold Monster", note: "Invocação · à vontade contra celestiais, corruptores ou elementais, sem espaço nem componentes materiais; 1x por descanso longo contra a mesma criatura",
     d: "Você pode conjurar Imobilizar Monstro à vontade, mirando só celestiais, corruptores ou elementais, sem gastar espaço nem componentes materiais. Depois de conjurá-la numa criatura, só pode conjurá-la nela de novo após um descanso longo." },
   diabolica: { n: "Visão Diabólica",
     d: "Você enxerga normalmente na escuridão, tanto mágica quanto não mágica, até 36 metros." },
@@ -921,33 +931,33 @@ const INVOCATIONS = {
     d: "O alcance da sua Rajada Mística passa a ser 90 metros." },
   runas: { n: "Olhos do Guardião das Runas",
     d: "Você consegue ler qualquer escrita." },
-  vigor: { n: "Vigor Demoníaco", sp: "False Life", note: "Invocação · à vontade como magia de 1º nível, sem gastar espaço",
+  vigor: { n: "Vigor Abissal", sp: "False Life", note: "Invocação · em você mesmo, à vontade no 1º nível, sem espaço nem componentes materiais",
     d: "Você pode conjurar Vitalidade Falsa em si mesmo à vontade, como magia de 1º nível, sem gastar espaço de magia nem componentes materiais." },
   olhar: { n: "Olhar de Duas Mentes",
-    d: "Com uma ação, você toca um humanoide voluntário e passa a perceber pelos sentidos dele até o fim do seu próximo turno. Enquanto ele estiver no mesmo plano que você, pode usar sua ação nos turnos seguintes para manter a conexão. Durante a conexão, você fica cego e surdo para o que está ao seu redor e se beneficia dos sentidos especiais da criatura." },
-  bebedor: { n: "Bebedor de Vida", min: 12, pact: "lamina",
+    d: "Com uma ação, você toca um humanoide voluntário e passa a perceber pelos sentidos dele até o fim do seu próximo turno. Enquanto ele estiver no mesmo plano que você, pode usar sua ação nos turnos seguintes para estender a conexão até o início do próximo turno. Durante a conexão, você fica cego e surdo para o que está ao seu redor e se beneficia dos sentidos especiais da criatura." },
+  bebedor: { n: "Sorvedor de Vida", min: 12, pact: "lamina",
     d: "Quando você acerta uma criatura com sua arma de pacto, ela sofre dano necrótico extra igual ao seu modificador de Carisma (mínimo 1)." },
-  mascara: { n: "Máscara de Muitas Faces", sp: "Disguise Self", note: AT_WILL,
+  mascara: { n: "Máscara das Muitas Faces", sp: "Disguise Self", note: AT_WILL,
     d: "Você pode conjurar Disfarçar-se à vontade, sem gastar espaço de magia." },
-  miriades: { n: "Mestre das Miríades Formas", min: 15, sp: "Alter Self", note: AT_WILL,
+  miriades: { n: "Mestre das Infindáveis Formas", min: 15, sp: "Alter Self", note: AT_WILL,
     d: "Você pode conjurar Alterar-se à vontade, sem gastar espaço de magia." },
   lacaios: { n: "Lacaios do Caos", min: 9, sp: "Conjure Elemental", note: ONCE, use: 1,
     d: "Você pode conjurar Conjurar Elemental uma vez usando um espaço de magia de bruxo. Só volta a fazer isso depois de um descanso longo." },
-  mente: { n: "Mente Atolada", min: 5, sp: "Slow", note: ONCE, use: 1,
+  mente: { n: "Encharcar a Mente", legacyName: "Mente Atolada", min: 5, sp: "Slow", note: ONCE, use: 1,
     d: "Você pode conjurar Lentidão uma vez usando um espaço de magia de bruxo. Só volta a fazer isso depois de um descanso longo." },
-  visoes: { n: "Visões Enevoadas", sp: "Silent Image", note: "Invocação · à vontade, sem espaço nem componentes materiais",
+  visoes: { n: "Visões nas Brumas", sp: "Silent Image", note: "Invocação · à vontade, sem espaço nem componentes materiais",
     d: "Você pode conjurar Imagem Silenciosa à vontade, sem gastar espaço de magia nem componentes materiais." },
-  sombras: { n: "Um com as Sombras", min: 5,
+  sombras: { n: "Uno com as Sombras", min: 5,
     d: "Quando está numa área de penumbra ou escuridão, você pode usar sua ação para ficar invisível até se mover ou fazer uma ação ou reação." },
-  salto: { n: "Salto Sobrenatural", min: 9, sp: "Jump", note: "Invocação · à vontade em você mesmo, sem gastar espaço",
+  salto: { n: "Salto Transcendental", min: 9, sp: "Jump", note: "Invocação · à vontade em você mesmo, sem gastar espaço nem componentes materiais",
     d: "Você pode conjurar Salto em si mesmo à vontade, sem gastar espaço de magia nem componentes materiais." },
   repulsiva: { n: "Explosão Repulsiva", eb: true,
     d: "Quando você acerta uma criatura com Rajada Mística, pode empurrá-la até 3 metros para longe de você, em linha reta." },
-  escultor: { n: "Escultor da Carne", min: 7, sp: "Polymorph", note: ONCE, use: 1,
+  escultor: { n: "Escultor de Carne", min: 7, sp: "Polymorph", note: ONCE, use: 1,
     d: "Você pode conjurar Metamorfose uma vez usando um espaço de magia de bruxo. Só volta a fazer isso depois de um descanso longo." },
   agouro: { n: "Sinal de Mau Agouro", min: 5, sp: "Bestow Curse", note: ONCE, use: 1,
     d: "Você pode conjurar Rogar Maldição uma vez usando um espaço de magia de bruxo. Só volta a fazer isso depois de um descanso longo." },
-  ladrao: { n: "Ladrão dos Cinco Destinos", sp: "Bane", note: ONCE, use: 1,
+  ladrao: { n: "Larápio dos Cinco Destinos", legacyName: "Ladrão dos Cinco Destinos", sp: "Bane", note: ONCE, use: 1,
     d: "Você pode conjurar Perdição uma vez usando um espaço de magia de bruxo. Só volta a fazer isso depois de um descanso longo." },
   sedenta: { n: "Lâmina Sedenta", min: 5, pact: "lamina",
     d: "Quando usa a ação de Ataque no seu turno, você pode atacar duas vezes com sua arma de pacto, em vez de uma." },
@@ -955,9 +965,9 @@ const INVOCATIONS = {
     d: "Você pode conjurar Olho Arcano à vontade, sem gastar espaço de magia." },
   voz: { n: "Voz do Mestre das Correntes", pact: "corrente",
     d: "Você pode se comunicar telepaticamente com seu familiar e perceber pelos sentidos dele enquanto estiverem no mesmo plano. Enquanto percebe pelos sentidos dele, também pode falar pela boca do familiar com a sua própria voz, mesmo que ele normalmente não fale." },
-  sussurros: { n: "Sussurros do Túmulo", min: 9, sp: "Speak with Dead", note: AT_WILL,
+  sussurros: { n: "Sussurros da Sepultura", min: 9, sp: "Speak with Dead", note: AT_WILL,
     d: "Você pode conjurar Falar com os Mortos à vontade, sem gastar espaço de magia." },
-  bruxa: { n: "Visão Bruxa", min: 15,
+  bruxa: { n: "Visão da Bruxa", min: 15,
     d: "Você vê a forma verdadeira de qualquer metamorfo ou criatura oculta por magia de ilusão ou transmutação que esteja na sua linha de visão, a até 9 metros." }
 };
 
@@ -965,6 +975,8 @@ const INVOCATIONS = {
 const $ = (s, r = document) => r.querySelector(s);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"]/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[m]));
 const norm = s => String(s).toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+const SORTED_SPELLS = SPELLS.slice().sort((a, b) => a.l - b.l || a.n.localeCompare(b.n, "pt-BR"));
+const spellSearch = new Map(SPELLS.map(sp => [sp.id, [norm(sp.n), norm(sp.en)]]));
 const uid = () => Math.random().toString(36).slice(2, 10);
 const lvlName = l => (l === 0 ? "Truque" : l + "º nível");
 const lvlGroup = l => (l === 0 ? "Truques" : "Magias de " + l + "º nível");
@@ -1008,9 +1020,9 @@ function classView(c, entry) {
   return view;
 }
 function fixClass(c) {
-  c.inv = Array.isArray(c.inv) ? c.inv : [];
-  c.spells = Array.isArray(c.spells) ? c.spells.filter(x => x && SP[x.id]) : [];
-  c.prep = Array.isArray(c.prep) ? c.prep : [];
+  c.inv = Array.isArray(c.inv) ? [...new Set(c.inv.filter(key => Object.hasOwn(INVOCATIONS, key)))] : [];
+  c.spells = Array.isArray(c.spells) ? c.spells.filter(x => x && Object.hasOwn(SP, x.id) && typeof x.via === "string") : [];
+  c.prep = Array.isArray(c.prep) ? [...new Set(c.prep.filter(id => c.spells.some(x => x.id === id && x.via === "class" && SP[id].l > 0)))] : [];
   if (!Object.hasOwn(CLASSES, c.cls)) c.cls = "bardo";
   c.level = clampLvl(c.level);
   c.subc = typeof c.subc === "string" ? c.subc : "";
@@ -1082,6 +1094,7 @@ function maxLvl(c) {
 function abilityKey(c) {
   const ci = castInfo(c);
   if (ci) return ci.ab;
+  if (c.cls === "monge" && effSub(c)) return "sab";
   const R = RACES[c.race], sr = raceSub(c);
   return (sr && sr.ab) || R.ab || "car";
 }
@@ -1120,9 +1133,12 @@ function setClassLevel(c, value) {
   c.level = Math.min(clampLvl(value), cap);
   rulesChanged();
 }
+function learnedInvocations(c) {
+  return c.inv.filter(key => INVOCATIONS[key] && invOk(c, INVOCATIONS[key]));
+}
 function invOk(c, iv) {
   return c.cls === "bruxo" && c.level >= (iv.min || 2) && (!iv.pact || (c.pact === iv.pact && c.level >= 3))
-    && (!iv.eb || c.spells.some(x => x.id === "eldritch-blast"));
+    && (!iv.eb || classStates(character(c)).some(entry => entry.spells.some(x => x.id === "eldritch-blast")));
 }
 
 function grants(c) {
@@ -1131,7 +1147,7 @@ function grants(c) {
     if ((g.at || 1) > level) return;
     const sp = SP[sid(g.sp)];
     if (!sp) { console.warn("Magia não encontrada:", g.sp); return; }
-    out.push({ sp, src, note: g.note || "", use: !!g.use, key: src + "|" + sp.id });
+    out.push({ sp, src, note: g.note || "", use: !!g.use, key: (g.sourceKey || src) + "|" + sp.id });
   });
   const R = RACES[c.race], sr = raceSub(c);
   const total = characterLevel(character(c));
@@ -1139,19 +1155,19 @@ function grants(c) {
   if (sr) add(sr.grants, sr.n, total);
   const C = CLASSES[c.cls], s = effSub(c);
   add(C.grants, C.n);
-  if (s) add(s.grants, s.n);
+  if (s && !(c.cls === "mago" && c.subc === "ilusao" && c.spells.some(x => x.id === "minor-illusion" && x.via === "class"))) add(s.grants, s.n);
   if (c.cls === "bruxo") {
     if (L >= 3 && PACTS[c.pact]) add(PACTS[c.pact].grants, PACTS[c.pact].n);
     c.inv.forEach(k => {
       const iv = INVOCATIONS[k];
-      if (iv && iv.sp && invOk(c, iv)) add([{ sp: iv.sp, at: iv.min || 2, note: iv.note, use: iv.use }], iv.n);
+      if (iv && iv.sp && invOk(c, iv)) add([{ sp: iv.sp, at: iv.min || 2, note: iv.note, use: iv.use, sourceKey: iv.legacyName }], iv.n);
     });
   }
   return out;
 }
 function picks(c) {
   const out = [], L = c.level;
-  const add = (list, src) => (list || []).forEach(p => { if ((p.at || 1) <= L) out.push(Object.assign({ src }, p)); });
+  const add = (list, src) => (list || []).forEach(p => { if ((p.at || 1) <= L) out.push({ ...p, src, count: typeof p.count === "function" ? p.count(L) : p.count }); });
   const R = RACES[c.race], sr = raceSub(c);
   if (c === character(c)) {
     add(R.picks, R.n);
@@ -1160,6 +1176,9 @@ function picks(c) {
   const C = CLASSES[c.cls], s = effSub(c);
   add(C.picks, C.n);
   if (s) add(s.picks, s.n);
+  if (s && c.cls === "mago" && c.subc === "ilusao" && c.spells.some(x => x.id === "minor-illusion" && x.via === "class")) {
+    add([{ key: "ilusao-extra", label: "Ilusão Menor Aprimorada: 1 truque adicional de Mago", count: 1, list: "Ma", min: 0, max: 0 }], s.n);
+  }
   if (c.cls === "bruxo") {
     if (L >= 3 && PACTS[c.pact]) add(PACTS[c.pact].picks, PACTS[c.pact].n);
     c.inv.forEach(k => {
@@ -1180,12 +1199,19 @@ function candidates(c, mode) {
     const ci = castInfo(c);
     if (!ci) return [];
     const exp = expIds(c), cant = ci.cant ? ci.cant(c.level) : 0;
-    return SPELLS.filter(s => (s.cl.includes(ci.list) || exp.has(s.id)) && (s.l === 0 ? cant > 0 : s.l <= mx));
+    const selected = new Set(c.spells.filter(x => x.via === "class").map(x => x.id));
+    const outside = ci.schools ? [...selected].filter(id => SP[id].l && !ci.schools.includes(SP[id].s)).length : 0;
+    const free = [3, 8, 14, 20].filter(level => level <= c.level).length;
+    const subclass = effSub(c);
+    const granted = new Set(grants(c).filter(g => g.src === subclass?.n).map(g => g.sp.id));
+    return SORTED_SPELLS.filter(s => (selected.has(s.id) || !granted.has(s.id)) && (s.cl.includes(ci.list) || exp.has(s.id)) &&
+      (s.l === 0 ? cant > 0 : s.l <= mx && (!ci.schools || ci.schools.includes(s.s) || outside < free || selected.has(s.id))));
   }
   const p = picks(c).find(p => p.key === mode);
   if (!p) return [];
-  const hi = p.max === "max" ? mx : p.max;
-  return SPELLS.filter(s => (!p.list || s.cl.includes(p.list)) && s.l >= p.min && s.l <= hi && (!p.rit || s.rit));
+  if (p.spells) return SORTED_SPELLS.filter(sp => p.spells[sp.en] && p.spells[sp.en][0] <= c.level);
+  const hi = p.max === "ritual-book" ? Math.floor(c.level / 2) : p.max === "max" ? mx : p.max;
+  return SORTED_SPELLS.filter(s => (!p.list || s.cl.includes(p.list)) && s.l >= p.min && s.l <= hi && (!p.rit || s.rit));
 }
 function counters(c) {
   const ci = castInfo(c), out = [], L = c.level, mod = abMod(c);
@@ -1209,9 +1235,9 @@ function counters(c) {
   }
   if (c.cls === "bruxo") {
     const n = CLASSES.bruxo.invocations[L - 1];
-    if (n) out.push({ label: "Invocações", have: c.inv.filter(k => INVOCATIONS[k] && invOk(c, INVOCATIONS[k])).length, max: n, soft: true });
+    if (n) out.push({ label: "Invocações", have: learnedInvocations(c).length, max: n });
   }
-  picks(c).forEach(p => out.push({ label: p.label.split(":")[0], have: c.spells.filter(x => x.via === p.key).length, max: p.count }));
+  picks(c).filter(p => Number.isFinite(p.count)).forEach(p => out.push({ label: p.label.split(":")[0], have: c.spells.filter(x => x.via === p.key).length, max: p.count }));
   return out;
 }
 
@@ -1220,13 +1246,19 @@ function spellRow(sp, o = {}) {
   const meta = [sp.t.split(" (")[0], sp.r].join(" · ");
   const tags = (sp.conc ? '<span class="tag" title="Concentração">C</span>' : "") + (sp.rit ? '<span class="tag" title="Ritual">R</span>' : "");
   const badges = (o.badges || []).map(b => `<span class="badge ${b.cls || ""}">${esc(b.t)}</span>`).join("");
-  return `<details class="spell" data-id="${sp.id}"${o.open ? " open" : ""}><summary>
+  return `<details class="spell" data-id="${sp.id}"${o.rowKey ? ` data-row-key="${esc(o.rowKey)}"` : ""}${o.note ? ` data-note="${esc(o.note)}"` : ""}><summary>
     <span class="lv" data-l="${sp.l}" title="${lvlName(sp.l)}">${sp.l === 0 ? "T" : sp.l}</span>
     <span class="sp-name"><span class="sp-title"><b>${esc(sp.n)}</b><i>${esc(sp.en)}</i></span>${badges ? `<span class="badges">${badges}</span>` : ""}</span>
     <span class="sp-meta"><span class="school"><span class="dot s-${sp.s}"></span>${SCHOOLS[sp.s]}</span><span class="mt">${esc(meta)}</span>${tags}</span>
     <span class="sp-act">${o.action || ""}</span>
-  </summary><div class="sp-body">
-    ${o.note ? `<p class="sp-note">${esc(o.note)}</p>` : ""}
+  </summary></details>`;
+}
+function renderSpellBody(row) {
+  if (!row.open || row.children.length > 1) return;
+  const sp = SP[row.dataset.id], note = row.dataset.note;
+  if (!sp) return;
+  row.insertAdjacentHTML("beforeend", `<div class="sp-body">
+    ${note ? `<p class="sp-note">${esc(note)}</p>` : ""}
     <dl class="sp-grid">
       <div><dt>Nível</dt><dd>${lvlName(sp.l)} · ${SCHOOLS[sp.s]}${sp.rit ? " (ritual)" : ""}</dd></div>
       <div><dt>Tempo de conjuração</dt><dd>${esc(sp.t)}</dd></div>
@@ -1237,7 +1269,7 @@ function spellRow(sp, o = {}) {
     </dl>
     <p class="sp-desc">${esc(sp.desc)}</p>
     ${sp.hi ? `<p class="sp-hi"><b>${sp.l === 0 ? "Em níveis mais altos." : "Em níveis superiores."}</b> ${esc(sp.hi)}</p>` : ""}
-  </div></details>`;
+  </div>`);
 }
 function withHeaders(list, fn) {
   let h = "", last = -1;
@@ -1248,9 +1280,13 @@ function withHeaders(list, fn) {
   return h;
 }
 function keepOpen(container, render) {
-  const open = container ? [...container.querySelectorAll("details.spell[open]")].map(d => d.dataset.id) : [];
+  const key = row => JSON.stringify([row.dataset.id, row.dataset.rowKey || ""]);
+  const open = new Set(container ? [...container.querySelectorAll("details.spell[open]")].map(key) : []);
   render();
-  open.forEach(id => { const d = container && container.querySelector(`details.spell[data-id="${id}"]`); if (d) d.open = true; });
+  if (!open.size) return;
+  for (const row of container.querySelectorAll("details.spell")) {
+    if (open.has(key(row))) { row.open = true; renderSpellBody(row); }
+  }
 }
 
 // ───── Cabeçalho e ficha ─────
@@ -1294,11 +1330,12 @@ function renderSheet() {
     </details>`;
   if (c.cls === "bruxo") {
     h += `<label class="field"><span>Dádiva do Pacto</span><select id="f-pact"><option value="">Nenhuma</option>${Object.keys(PACTS).map(k => opt(k, PACTS[k].n, c.pact)).join("")}</select>${c.level < 3 ? '<small class="hint warn">Recebida no 3º nível.</small>' : ""}</label>`;
-    const n = CLASSES.bruxo.invocations[c.level - 1];
+    const n = CLASSES.bruxo.invocations[c.level - 1], atLimit = learnedInvocations(c).length >= n;
     h += `<fieldset class="field inv"><legend>Invocações Místicas</legend><small class="hint">${n ? `Você conhece ${n} neste nível. ` : "Recebidas a partir do 2º nível. "}Passe o mouse sobre uma invocação para ler a descrição.</small><div class="inv-list">${Object.keys(INVOCATIONS).sort((a, b) => INVOCATIONS[a].n.localeCompare(INVOCATIONS[b].n)).map(k => {
       const iv = INVOCATIONS[k], ok = invOk(c, iv), on = c.inv.includes(k);
+      const locked = !ok || atLimit;
       const req = [iv.min ? `${iv.min}º nível` : "", iv.pact ? PACTS[iv.pact].n : "", iv.eb ? "Rajada Mística" : ""].filter(Boolean).join(", ");
-      return `<label class="check${ok ? "" : " locked"}" data-tip="${k}"><input type="checkbox" data-inv="${k}"${on ? " checked" : ""}${ok || on ? "" : " disabled"}><span>${esc(iv.n)}${req ? `<small>Pré-requisito: ${esc(req)}</small>` : ""}</span></label>`;
+      return `<label class="check${locked && !on ? " locked" : ""}" data-tip="${k}"><input type="checkbox" data-inv="${k}"${on ? " checked" : ""}${!locked || on ? "" : " disabled"}><span>${esc(iv.n)}${req ? `<small>Pré-requisito: ${esc(req)}</small>` : ""}</span></label>`;
     }).join("")}</div></fieldset>`;
   }
   h += `<div class="sheet-actions"><button type="button" class="btn ghost" data-act="export">Exportar</button><button type="button" class="btn ghost" data-act="import">Importar</button>`
@@ -1325,7 +1362,7 @@ function describe(c) {
   return [sr ? sr.n : R.n, classLabel(character(c)), sub ? sub.n : ""].filter(Boolean).join(" · ");
 }
 function renderSummary(c) {
-  const ci = castInfo(c), hasMagic = ci || grants(c).length;
+  const ci = castInfo(c), hasMagic = ci || grants(c).length || picks(c).length;
   const mod = abMod(c), p = prof(c), multiple = classStates(character(c)).length > 1;
   let h = `<section class="summary"><div class="sum-head"><div class="sum-id"><h2 id="sum-name">${esc(c.name || "Sem nome")}</h2><p class="sum-line">${esc(describe(c))}</p></div>`;
   if (multiple) h += `<p class="hint">Classe em edição: ${esc(CLASSES[c.cls].n)}</p>`;
@@ -1335,7 +1372,7 @@ function renderSummary(c) {
   const cs = counters(c);
   if (cs.length) {
     h += `<div class="counters">${cs.map(k => {
-      const st = k.min ? "" : k.have > k.max ? (k.soft ? "" : " over") : k.have === k.max ? " full" : "";
+      const st = k.min ? "" : k.have > k.max ? " over" : k.have === k.max ? " full" : "";
       return `<div class="counter${st}"><span class="c-num">${k.have}<small>/${k.max}${k.min ? "+" : ""}</small></span><span class="c-lab">${esc(k.label)}</span></div>`;
     }).join("")}</div>`;
   }
@@ -1354,9 +1391,7 @@ function renderSlots(c) {
   if (!rows) return "";
   return `<div class="slots"><div class="slots-head"><h3>Espaços de magia</h3><div class="rest">`
     + (pact ? `<button type="button" class="btn ghost sm" data-act="short">Descanso curto</button>` : "")
-    + `<button type="button" class="btn ghost sm" data-act="long">Descanso longo</button></div></div><div class="slot-rows">${rows}</div>
-    ${pact ? '<p class="hint">Espaços de pacto voltam no descanso curto.</p>' : ""}
-    ${slots.length && pact ? '<p class="hint">Espaços de pacto e de conjuração podem ser usados para magias conhecidas ou preparadas de ambas as classes.</p>' : ""}</div>`;
+    + `<button type="button" class="btn ghost sm" data-act="long">Descanso longo</button></div></div><div class="slot-rows">${rows}</div></div>`;
 }
 
 // ───── Abas ─────
@@ -1385,7 +1420,7 @@ function renderGrim(c) {
     h += g.map(x => {
       const used = !!c.used.g[x.key];
       const act = x.use ? `<button type="button" class="use${used ? " on" : ""}" data-act="use-g" data-key="${esc(x.key)}" aria-pressed="${used}">${used ? "Usada" : "Disponível"}</button>` : "";
-      return spellRow(x.sp, { badges: [{ t: x.src, cls: "src" }], note: x.note, action: act });
+      return spellRow(x.sp, { badges: [{ t: x.src, cls: "src" }], note: x.note, action: act, rowKey: x.key });
     }).join("");
     h += `</section>`;
   }
@@ -1417,7 +1452,9 @@ function renderGrim(c) {
         act += `<button type="button" class="use${used ? " on" : ""}" data-act="use-arc" data-id="${sp.id}" aria-pressed="${used}">${used ? "Usada" : "Disponível"}</button>`;
       }
       act += `<button type="button" class="btn sm ghost" data-act="rm" data-id="${sp.id}" data-via="${esc(x.via)}" aria-label="Remover ${esc(sp.n)}">Remover</button>`;
-      return spellRow(sp, { badges, action: act });
+      const discipline = pk[x.via]?.spells?.[sp.en];
+      const note = discipline ? `Custa ${discipline[1]} pontos de chi${discipline[2] ? " · " + discipline[2] : ""} · sem componentes materiais` : isBookRitual(x.via) ? "Livro de Segredos Antigos · apenas como ritual" : "";
+      return spellRow(sp, { badges, note, action: act, rowKey: x.via });
     }).join("");
     h += `</section>`;
   });
@@ -1440,10 +1477,11 @@ function renderAddShell(c) {
     const cant = ci.cant ? ci.cant(c.level) : 0;
     info = mx ? `Mostrando magias de ${ci.n} até o ${mx}º nível${cant ? " e truques" : ""}.` : cant ? "Neste nível você só aprende truques." : `${ci.n} ainda não conjura magias neste nível.`;
     if (expIds(c).size) info += " Inclui a lista expandida do seu patrono.";
+    if (ci.schools) info += " As escolhas de outras escolas são limitadas pelas exceções dos níveis 3, 8, 14 e 20.";
     if (ci.note) info += " " + ci.note;
   } else {
     const p = m.p, used = c.spells.filter(x => x.via === p.key).length;
-    info = `${p.label}. Escolhidas: ${used} de ${p.count}.`;
+    info = `${p.label}. Escolhidas: ${used}${Number.isFinite(p.count) ? ` de ${p.count}` : ""}.`;
   }
   const levels = [...new Set(candidates(c, ui.mode).map(s => s.l))].sort((a, b) => a - b);
   if (ui.lvl !== "all" && !levels.includes(+ui.lvl)) ui.lvl = "all";
@@ -1456,22 +1494,25 @@ function renderAddShell(c) {
     <div class="lvchips" role="group" aria-label="Filtrar por nível">${lvButtons.map(([k, t]) => `<button type="button" class="lvchip${ui.lvl === k ? " on" : ""}" data-act="a-lvl" data-l="${k}" aria-pressed="${ui.lvl === k}">${t}</button>`).join("")}</div>
     <p class="mode-info">${esc(info)}</p><div id="a-list"></div>`;
 }
+const isBookRitual = via => via === "livro" || via === "livro-copia";
+function hasSpell(c, id, mode) {
+  return c.spells.some(x => x.id === id && isBookRitual(x.via) === isBookRitual(mode));
+}
 function renderAddList() {
   const c = cur(), el = $("#a-list");
   if (!el) return;
   let list = candidates(c, ui.mode);
   const q = norm(ui.q);
-  if (q) list = list.filter(s => norm(s.n).includes(q) || norm(s.en).includes(q));
+  if (q) list = list.filter(s => spellSearch.get(s.id).some(name => name.includes(q)));
   if (ui.lvl !== "all") list = list.filter(s => s.l === +ui.lvl);
   if (ui.school) list = list.filter(s => s.s === ui.school);
-  list.sort((a, b) => a.l - b.l || a.n.localeCompare(b.n));
   if (!list.length) { el.innerHTML = '<p class="empty">Nenhuma magia encontrada com esses filtros.</p>'; return; }
   const exp = expIds(c), gr = new Set(grants(c).map(g => g.sp.id)), ci = castInfo(c);
   const p = ui.mode === "class" ? null : picks(c).find(p => p.key === ui.mode);
   const full = p ? c.spells.filter(x => x.via === p.key).length >= p.count : false;
   keepOpen(el, () => {
     el.innerHTML = withHeaders(list, sp => {
-      const has = c.spells.some(x => x.id === sp.id);
+      const has = hasSpell(c, sp.id, ui.mode);
       const badges = [];
       if (ui.mode === "class" && exp.has(sp.id) && !sp.cl.includes(ci.list)) badges.push({ t: "Patrono", cls: "exp" });
       if (gr.has(sp.id)) badges.push({ t: "Já concedida", cls: "src" });
@@ -1496,15 +1537,14 @@ function renderAllShell() {
 function renderAllList() {
   const el = $("#c-list");
   if (!el) return;
-  let list = SPELLS.slice();
+  let list = SORTED_SPELLS;
   const q = norm(ui.cq);
-  if (q) list = list.filter(s => norm(s.n).includes(q) || norm(s.en).includes(q));
+  if (q) list = list.filter(s => spellSearch.get(s.id).some(name => name.includes(q)));
   if (ui.ccls) list = list.filter(s => s.cl.includes(ui.ccls));
   if (ui.cschool) list = list.filter(s => s.s === ui.cschool);
   if (ui.clvl !== "all") list = list.filter(s => s.l === +ui.clvl);
   if (ui.conc) list = list.filter(s => s.conc);
   if (ui.rit) list = list.filter(s => s.rit);
-  list.sort((a, b) => a.l - b.l || a.n.localeCompare(b.n));
   $("#c-count").textContent = `${list.length} de ${SPELLS.length} magias.`;
   keepOpen(el, () => { el.innerHTML = list.length ? withHeaders(list, sp => spellRow(sp)) : '<p class="empty">Nenhuma magia encontrada com esses filtros.</p>'; });
 }
@@ -1579,11 +1619,15 @@ document.addEventListener("click", e => {
     case "long": c.used = blankUsed(); save(); refreshSummary(); if (ui.tab === "grim") keepOpen($("#tabbody"), renderTab); break;
     case "use-g": c.used.g[t.dataset.key] = !c.used.g[t.dataset.key]; save(); keepOpen($("#tabbody"), renderTab); break;
     case "use-arc": c.used.arc[t.dataset.id] = !c.used.arc[t.dataset.id]; save(); keepOpen($("#tabbody"), renderTab); break;
-    case "add":
-      if (!c.spells.some(x => x.id === t.dataset.id)) c.spells.push({ id: t.dataset.id, via: ui.mode });
-      save(); refreshSummary(); renderChips();
-      { const info = $(".mode-info"); if (info && ui.mode !== "class") { const p = picks(c).find(p => p.key === ui.mode); if (p) info.textContent = `${p.label}. Escolhidas: ${c.spells.filter(x => x.via === p.key).length} de ${p.count}.`; } }
+    case "add": {
+      const p = picks(c).find(p => p.key === ui.mode);
+      if (hasSpell(c, t.dataset.id, ui.mode) || !candidates(c, ui.mode).some(sp => sp.id === t.dataset.id) ||
+          (p && c.spells.filter(x => x.via === p.key).length >= p.count)) break;
+      c.spells.push({ id: t.dataset.id, via: ui.mode });
+      save(); refreshSummary();
+      { const info = $(".mode-info"); if (info && ui.mode !== "class") { const p = picks(c).find(p => p.key === ui.mode); if (p) info.textContent = `${p.label}. Escolhidas: ${c.spells.filter(x => x.via === p.key).length}${Number.isFinite(p.count) ? ` de ${p.count}` : ""}.`; } }
       renderAddList(); break;
+    }
     case "rm":
       c.spells = c.spells.filter(x => !(x.id === t.dataset.id && x.via === t.dataset.via));
       c.prep = c.prep.filter(id => c.spells.some(x => x.id === id));
@@ -1659,7 +1703,11 @@ document.addEventListener("change", e => {
   else if (t.id === "f-pact") { c.pact = t.value; rulesChanged(); }
   else if (t.dataset && t.dataset.inv) {
     const k = t.dataset.inv;
-    c.inv = t.checked ? c.inv.concat(k) : c.inv.filter(x => x !== k);
+    if (t.checked && (!Object.hasOwn(INVOCATIONS, k) || !invOk(c, INVOCATIONS[k]) || learnedInvocations(c).length >= CLASSES.bruxo.invocations[c.level - 1])) {
+      t.checked = false;
+      return;
+    }
+    c.inv = t.checked ? [...new Set(c.inv.concat(k))] : c.inv.filter(x => x !== k);
     rulesChanged();
   }
   else if (t.id === "a-mode") { ui.mode = t.value; ui.lvl = "all"; renderTab(); }
@@ -1672,6 +1720,7 @@ document.addEventListener("change", e => {
 
 document.addEventListener("toggle", e => {
   if (e.target.id === "multiclass-options") ui.multiclassOpen = e.target.open;
+  else if (e.target.matches("details.spell")) renderSpellBody(e.target);
 }, true);
 
 // ───── Descrição das invocações ao passar o mouse ─────
