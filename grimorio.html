@@ -102,11 +102,8 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
 .score{display:flex;gap:8px;align-items:center}
 .score input{max-width:90px}
 .score output{font-family:var(--display);font-size:1.6rem;color:var(--accent);font-variant-numeric:tabular-nums}
-.inv-list{display:flex;flex-direction:column;gap:2px;max-height:260px;overflow:auto;padding-right:4px;margin-top:4px}
 .check{display:flex;gap:8px;align-items:flex-start;padding:4px 0;cursor:pointer;font-size:.97rem}
 .check input{margin-top:5px;accent-color:var(--accent)}
-.check small{display:block;color:var(--muted);font-size:.82rem;font-style:italic}
-.check.locked{opacity:.5;cursor:default}
 .check.inline{display:inline-flex;align-items:center;padding:0}
 .check.inline input{margin-top:0}
 .sheet-actions{display:flex;flex-wrap:wrap;gap:8px}
@@ -141,6 +138,11 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
 .counter.full .c-num{color:var(--brass)}
 .counter.over{background:var(--warn-soft);color:var(--warn);border-color:var(--warn)}
 .counter.over .c-num small{color:var(--warn)}
+.limit-notice{position:fixed;z-index:50;inset-inline-end:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);max-width:min(420px,calc(100% - 32px));padding:10px 14px;background:var(--warn-soft);color:var(--ink);border:1px solid var(--warn);border-radius:var(--radius);box-shadow:var(--shadow);pointer-events:none}
+.limit-notice:empty{display:none}
+.inv-card{margin-bottom:8px;gap:8px}
+.inv-card h3,.inv-card p{margin:0}
+.inv-card header{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .slots{border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:8px}
 .slots-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .slots-head h3{font-size:1.2rem;color:var(--accent)}
@@ -235,11 +237,6 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
 .foot::before{content:"❦";display:block;color:var(--accent);font-style:normal;font-size:1.2rem;margin-bottom:4px}
 .inv-tip{position:fixed;z-index:50;max-width:min(340px,calc(100vw - 16px));padding:10px 14px 12px;background-color:var(--bg);background-image:var(--grain);border:1px solid var(--gold);border-radius:3px;
   box-shadow:inset 0 0 0 3px var(--bg),inset 0 0 0 4px var(--line),0 8px 24px rgb(40 20 5 / .35);color:var(--ink);font-size:.95rem;line-height:1.45;pointer-events:none}
-.inv-tip b{display:block;font-family:var(--display);font-weight:400;font-size:1.1rem;color:var(--accent)}
-.inv-tip small{display:block;color:var(--muted);font-style:italic;font-size:.82rem}
-.inv-tip p{margin:6px 0 0}
-.check[data-tip]{border-radius:2px;padding-inline:4px}
-.check[data-tip]:hover{background:var(--surface-2)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -257,6 +254,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
   </div>
   <p class="foot">Descrições resumidas do Livro do Jogador, de Tasha e de Xanathar. As fichas ficam salvas só neste navegador.</p>
 </div>
+<div id="limit-notice" class="limit-notice" role="status" aria-live="polite" aria-atomic="true"></div>
 <script>
 /* Estruturas básicas do banco de magias. */
 const SCHOOLS = { abj: "Abjuração", adv: "Adivinhação", con: "Conjuração", enc: "Encantamento", evo: "Evocação", ilu: "Ilusão", nec: "Necromancia", tra: "Transmutação" };
@@ -1065,7 +1063,7 @@ function cur() {
 }
 
 const ui = { activeClass: "", multiclassOpen: false, tab: "grim", mode: "class", q: "", lvl: "all", school: "", cq: "", clvl: "all", ccls: "", cschool: "", conc: false, rit: false, panel: null, confirmDel: false };
-try { const t = localStorage.getItem(KEY + "-tab"); if (t === "grim" || t === "add" || t === "all") ui.tab = t; } catch (e) {}
+try { const t = localStorage.getItem(KEY + "-tab"); if (["grim", "add", "inv", "all"].includes(t)) ui.tab = t; } catch (e) {}
 
 // ───── Regras ─────
 function raceSub(c) { const R = RACES[c.race]; return R.subs ? R.subs[c.sub] || null : null; }
@@ -1196,12 +1194,10 @@ function candidates(c, mode) {
     if (!ci) return [];
     const exp = expIds(c), cant = ci.cant ? ci.cant(c.level) : 0;
     const selected = new Set(c.spells.filter(x => x.via === "class").map(x => x.id));
-    const outside = ci.schools ? [...selected].filter(id => SP[id].l && !ci.schools.includes(SP[id].s)).length : 0;
-    const free = [3, 8, 14, 20].filter(level => level <= c.level).length;
     const subclass = effSub(c);
     const granted = new Set(grants(c).filter(g => g.src === subclass?.n).map(g => g.sp.id));
     return SORTED_SPELLS.filter(s => (selected.has(s.id) || !granted.has(s.id)) && (s.cl.includes(ci.list) || exp.has(s.id)) &&
-      (s.l === 0 ? cant > 0 : s.l <= mx && (!ci.schools || ci.schools.includes(s.s) || outside < free || selected.has(s.id))));
+      (s.l === 0 ? cant > 0 : s.l <= mx));
   }
   const p = picks(c).find(p => p.key === mode);
   if (!p) return [];
@@ -1222,6 +1218,7 @@ function counters(c) {
       out.push({ label: "Magias conhecidas", have: nL + extra, max: ci.known[L - 1] });
     }
     if (ci.prep === "full" && !ci.book) out.push({ label: "Preparadas", have: nL, max: Math.max(1, mod + L) });
+    if (ci.schools) out.push({ label: "Magias de outras escolas", have: mine.filter(s => s.l > 0 && !ci.schools.includes(s.s)).length, max: [3, 8, 14, 20].filter(level => level <= L).length });
     if (ci.book) {
       out.push({ label: "No grimório", have: nL, max: 6 + 2 * (L - 1), min: true });
       const prepared = c.prep.filter(id => c.spells.some(x => x.id === id && x.via === "class")).length;
@@ -1231,7 +1228,7 @@ function counters(c) {
   }
   if (c.cls === "bruxo") {
     const n = CLASSES.bruxo.invocations[L - 1];
-    if (n) out.push({ label: "Invocações", have: learnedInvocations(c).length, max: n });
+    if (n) out.push({ label: "Invocações Místicas", have: learnedInvocations(c).length, max: n });
   }
   picks(c).filter(p => Number.isFinite(p.count)).forEach(p => out.push({ label: p.label.split(":")[0], have: c.spells.filter(x => x.via === p.key).length, max: p.count }));
   return out;
@@ -1313,7 +1310,7 @@ function renderSheet() {
     const hint = c.subc && c.level < C.subAt ? `<small class="hint warn">Os efeitos começam no ${C.subAt}º nível.</small>` : `<small class="hint">Escolhida no ${C.subAt}º nível de ${esc(C.n)}.</small>`;
     h += `<label class="field"><span>${esc(C.subTitle)}</span><select id="f-subc"><option value="">Escolha…</option>${Object.keys(C.subs).map(k => opt(k, C.subs[k].n, c.subc)).join("")}</select>${hint}</label>`;
   }
-  h += `<div class="field"><label for="f-score">Valor de ${AB_NAMES[ab]}</label><div class="score"><input id="f-score" data-score="${ab}" type="number" min="1" max="30" value="${scoreFor(c, ab)}" inputmode="numeric"><output id="f-mod" for="f-score">${signed(abMod(c))}</output></div><small class="hint">Define a CD e o ataque das magias da classe em edição.</small></div>
+  h += `<div class="field"><label for="f-score">Valor de ${AB_NAMES[ab]}</label><div class="score"><input id="f-score" data-score="${ab}" type="number" min="1" max="30" value="${scoreFor(c, ab)}" inputmode="numeric"><output id="f-mod" for="f-score">${signed(abMod(c))}</output></div></div>
     <details class="field" id="multiclass-options"${ui.multiclassOpen ? " open" : ""}>
       <summary>Multiclasse</summary>
       <p class="hint">Nível total: ${characterLevel(root)}/20. Para adicionar uma classe, preencha os atributos exigidos pelas duas classes.</p>
@@ -1326,13 +1323,7 @@ function renderSheet() {
     </details>`;
   if (c.cls === "bruxo") {
     h += `<label class="field"><span>Dádiva do Pacto</span><select id="f-pact"><option value="">Nenhuma</option>${Object.keys(PACTS).map(k => opt(k, PACTS[k].n, c.pact)).join("")}</select>${c.level < 3 ? '<small class="hint warn">Recebida no 3º nível.</small>' : ""}</label>`;
-    const n = CLASSES.bruxo.invocations[c.level - 1], atLimit = learnedInvocations(c).length >= n;
-    h += `<fieldset class="field inv"><legend>Invocações Místicas</legend><small class="hint">${n ? `Você conhece ${n} neste nível. ` : "Recebidas a partir do 2º nível. "}Passe o mouse sobre uma invocação para ler a descrição.</small><div class="inv-list">${Object.keys(INVOCATIONS).sort((a, b) => INVOCATIONS[a].n.localeCompare(INVOCATIONS[b].n)).map(k => {
-      const iv = INVOCATIONS[k], ok = invOk(c, iv), on = c.inv.includes(k);
-      const locked = !ok || atLimit;
-      const req = [iv.min ? `${iv.min}º nível` : "", iv.pact ? PACTS[iv.pact].n : "", iv.eb ? "Rajada Mística" : ""].filter(Boolean).join(", ");
-      return `<label class="check${locked && !on ? " locked" : ""}" data-tip="${k}"><input type="checkbox" data-inv="${k}"${on ? " checked" : ""}${!locked || on ? "" : " disabled"}><span>${esc(iv.n)}${req ? `<small>Pré-requisito: ${esc(req)}</small>` : ""}</span></label>`;
-    }).join("")}</div></fieldset>`;
+    h += `<button type="button" class="btn ghost" data-act="tab" data-tab="inv">Gerenciar Invocações Místicas</button>`;
   }
   h += `<div class="sheet-actions"><button type="button" class="btn ghost" data-act="export">Exportar</button><button type="button" class="btn ghost" data-act="import">Importar</button>`
     + (ui.confirmDel ? `<button type="button" class="btn danger" data-act="del-yes">Confirmar exclusão</button><button type="button" class="btn ghost" data-act="del-no">Cancelar</button>`
@@ -1393,7 +1384,10 @@ function renderSlots(c) {
 // ───── Abas ─────
 function renderMain() {
   const c = cur();
-  const tabs = [["grim", "Grimório"], ["add", "Adicionar magias"], ["all", "Compêndio"]];
+  const tabs = [["grim", "Grimório"], ["add", "Adicionar magias"]];
+  if (c.cls === "bruxo") tabs.push(["inv", "Invocações Místicas"]);
+  else if (ui.tab === "inv") ui.tab = "grim";
+  tabs.push(["all", "Compêndio"]);
   $("#main").innerHTML = renderSummary(c)
     + `<div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button type="button" role="tab" class="tab${ui.tab === k ? " on" : ""}" aria-selected="${ui.tab === k}" data-act="tab" data-tab="${k}">${l}</button>`).join("")}</div>
     <div id="tabbody"></div>`;
@@ -1403,7 +1397,21 @@ function renderTab() {
   const c = cur(), b = $("#tabbody");
   if (ui.tab === "grim") b.innerHTML = renderGrim(c);
   else if (ui.tab === "add") { b.innerHTML = renderAddShell(c); renderAddList(); }
+  else if (ui.tab === "inv") b.innerHTML = renderInvocations(c);
   else { b.innerHTML = renderAllShell(); renderAllList(); }
+}
+const sortedInvocations = Object.entries(INVOCATIONS).sort(([, a], [, b]) => a.n.localeCompare(b.n, "pt-BR"));
+function renderInvocations(c) {
+  return sortedInvocations.map(([key, iv]) => {
+    const selected = c.inv.includes(key), eligible = invOk(c, iv);
+    const req = [`${iv.min || 2}º nível de Bruxo`, iv.pact ? PACTS[iv.pact].n : "", iv.eb ? "Rajada Mística" : ""].filter(Boolean).join(" · ");
+    const label = selected ? "Remover" : eligible ? "Adicionar" : "Indisponível";
+    return `<article class="panel inv-card">
+      <header><h3>${esc(iv.n)}</h3><button type="button" class="btn sm${selected ? " ghost" : ""}" data-act="invocation" data-key="${key}" aria-label="${esc(label + " " + iv.n)}"${eligible || selected ? "" : " disabled"}>${label}</button></header>
+      <p class="hint">Pré-requisitos: ${esc(req)}${selected && !eligible ? " · Pré-requisitos não atendidos" : ""}</p>
+      <p>${esc(iv.d)}</p>
+    </article>`;
+  }).join("");
 }
 function refreshSummary() { const s = $(".summary"); if (s) s.outerHTML = renderSummary(cur()); }
 
@@ -1504,16 +1512,15 @@ function renderAddList() {
   if (ui.school) list = list.filter(s => s.s === ui.school);
   if (!list.length) { el.innerHTML = '<p class="empty">Nenhuma magia encontrada com esses filtros.</p>'; return; }
   const exp = expIds(c), gr = new Set(grants(c).map(g => g.sp.id)), ci = castInfo(c);
-  const p = ui.mode === "class" ? null : picks(c).find(p => p.key === ui.mode);
-  const full = p ? c.spells.filter(x => x.via === p.key).length >= p.count : false;
   keepOpen(el, () => {
     el.innerHTML = withHeaders(list, sp => {
       const has = hasSpell(c, sp.id, ui.mode);
       const badges = [];
       if (ui.mode === "class" && exp.has(sp.id) && !sp.cl.includes(ci.list)) badges.push({ t: "Patrono", cls: "exp" });
       if (gr.has(sp.id)) badges.push({ t: "Já concedida", cls: "src" });
+      if (ui.mode === "class" && sp.l > 0 && ci.schools && !ci.schools.includes(sp.s)) badges.push({ t: "Outra escola", cls: "warn" });
       const act = has ? `<span class="have">No grimório</span>`
-        : `<button type="button" class="btn sm" data-act="add" data-id="${sp.id}"${full ? ' disabled title="Limite desta escolha atingido"' : ""}>Adicionar</button>`;
+        : `<button type="button" class="btn sm" data-act="add" data-id="${sp.id}">Adicionar</button>`;
       return spellRow(sp, { badges, action: act });
     });
   });
@@ -1547,6 +1554,18 @@ function renderAllList() {
 
 function renderAll() { renderChips(); renderSheet(); renderMain(); }
 function rulesChanged() { save(); renderChips(); renderSheet(); renderMain(); }
+let noticeTimer;
+function warnLimits(c, before) {
+  const messages = counters(c).flatMap((counter, index) => {
+    if (counter.min || counter.have < counter.max || counter.have <= (before[index]?.have || 0)) return [];
+    return [`${counter.label}: limite ${counter.have === counter.max ? "atingido" : "ultrapassado"} (${counter.have}/${counter.max}).`];
+  });
+  if (!messages.length) return;
+  const notice = $("#limit-notice");
+  notice.textContent = messages.join(" ");
+  clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(() => { notice.textContent = ""; }, 6500);
+}
 
 // ───── Eventos ─────
 document.addEventListener("click", e => {
@@ -1554,6 +1573,7 @@ document.addEventListener("click", e => {
   if (!t) return;
   if (t.closest("summary")) e.preventDefault();
   const c = cur(), act = t.dataset.act;
+  $("#limit-notice").textContent = "";
   switch (act) {
     case "pick-char": DB.cur = t.dataset.id; ui.activeClass = ""; ui.multiclassOpen = false; ui.confirmDel = false; ui.panel = null; save(); renderAll(); break;
     case "new-char": {
@@ -1598,7 +1618,20 @@ document.addEventListener("click", e => {
       ui.tab = t.dataset.tab;
       try { localStorage.setItem(KEY + "-tab", ui.tab); } catch (err) {}
       renderMain();
+      $(`[role="tab"][data-tab="${ui.tab}"]`)?.focus();
       break;
+    case "invocation": {
+      const key = t.dataset.key;
+      if (c.cls !== "bruxo" || !Object.hasOwn(INVOCATIONS, key)) break;
+      const selected = c.inv.includes(key);
+      if (!selected && !invOk(c, INVOCATIONS[key])) break;
+      const before = counters(c);
+      c.inv = selected ? c.inv.filter(k => k !== key) : c.inv.concat(key);
+      save(); refreshSummary(); renderTab();
+      $(`[data-act="invocation"][data-key="${key}"]`)?.focus({ preventScroll: true });
+      warnLimits(c, before);
+      break;
+    }
     case "pip": {
       const i = Number(t.dataset.i), n = Number(t.dataset.n), lv = t.dataset.lv;
       const isPact = t.dataset.kind === "pact";
@@ -1616,22 +1649,21 @@ document.addEventListener("click", e => {
     case "use-g": c.used.g[t.dataset.key] = !c.used.g[t.dataset.key]; save(); keepOpen($("#tabbody"), renderTab); break;
     case "use-arc": c.used.arc[t.dataset.id] = !c.used.arc[t.dataset.id]; save(); keepOpen($("#tabbody"), renderTab); break;
     case "add": {
-      const p = picks(c).find(p => p.key === ui.mode);
-      if (hasSpell(c, t.dataset.id, ui.mode) || !candidates(c, ui.mode).some(sp => sp.id === t.dataset.id) ||
-          (p && c.spells.filter(x => x.via === p.key).length >= p.count)) break;
+      if (hasSpell(c, t.dataset.id, ui.mode) || !candidates(c, ui.mode).some(sp => sp.id === t.dataset.id)) break;
+      const before = counters(c);
       c.spells.push({ id: t.dataset.id, via: ui.mode });
       save(); refreshSummary();
       { const info = $(".mode-info"); if (info && ui.mode !== "class") { const p = picks(c).find(p => p.key === ui.mode); if (p) info.textContent = `${p.label}. Escolhidas: ${c.spells.filter(x => x.via === p.key).length}${Number.isFinite(p.count) ? ` de ${p.count}` : ""}.`; } }
-      renderAddList(); break;
+      renderAddList(); warnLimits(c, before); break;
     }
     case "rm":
       c.spells = c.spells.filter(x => !(x.id === t.dataset.id && x.via === t.dataset.via));
       c.prep = c.prep.filter(id => c.spells.some(x => x.id === id));
       save(); refreshSummary(); keepOpen($("#tabbody"), renderTab); break;
     case "prep": {
-      const id = t.dataset.id;
+      const id = t.dataset.id, before = counters(c);
       c.prep = c.prep.includes(id) ? c.prep.filter(x => x !== id) : c.prep.concat(id);
-      save(); refreshSummary(); keepOpen($("#tabbody"), renderTab); break;
+      save(); refreshSummary(); keepOpen($("#tabbody"), renderTab); warnLimits(c, before); break;
     }
     case "a-lvl": ui.lvl = t.dataset.l; document.querySelectorAll('[data-act="a-lvl"]').forEach(b => { const on = b.dataset.l === ui.lvl; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); }); renderAddList(); break;
     case "c-lvl": ui.clvl = t.dataset.l; document.querySelectorAll('[data-act="c-lvl"]').forEach(b => { const on = b.dataset.l === ui.clvl; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); }); renderAllList(); break;
@@ -1697,15 +1729,6 @@ document.addEventListener("change", e => {
   else if (t.id === "f-subc") { c.subc = t.value; rulesChanged(); }
   else if (t.id === "f-level") { setClassLevel(c, t.value); }
   else if (t.id === "f-pact") { c.pact = t.value; rulesChanged(); }
-  else if (t.dataset && t.dataset.inv) {
-    const k = t.dataset.inv;
-    if (t.checked && (!Object.hasOwn(INVOCATIONS, k) || !invOk(c, INVOCATIONS[k]) || learnedInvocations(c).length >= CLASSES.bruxo.invocations[c.level - 1])) {
-      t.checked = false;
-      return;
-    }
-    c.inv = t.checked ? [...new Set(c.inv.concat(k))] : c.inv.filter(x => x !== k);
-    rulesChanged();
-  }
   else if (t.id === "a-mode") { ui.mode = t.value; ui.lvl = "all"; renderTab(); }
   else if (t.id === "a-school") { ui.school = t.value; renderAddList(); }
   else if (t.id === "c-cls") { ui.ccls = t.value; renderAllList(); }
@@ -1718,29 +1741,6 @@ document.addEventListener("toggle", e => {
   if (e.target.id === "multiclass-options") ui.multiclassOpen = e.target.open;
   else if (e.target.matches("details.spell")) renderSpellBody(e.target);
 }, true);
-
-// ───── Descrição das invocações ao passar o mouse ─────
-const tipEl = document.createElement("div");
-tipEl.id = "inv-tip"; tipEl.className = "inv-tip"; tipEl.setAttribute("role", "tooltip"); tipEl.hidden = true;
-document.body.appendChild(tipEl);
-let tipFor = null;
-function showTip(label) {
-  tipFor = label;
-  const iv = INVOCATIONS[label.dataset.tip];
-  if (!iv) return;
-  const req = [iv.min ? `${iv.min}º nível de bruxo` : "", iv.pact ? PACTS[iv.pact].n : "", iv.eb ? "truque Rajada Mística" : ""].filter(Boolean).join(", ");
-  tipEl.innerHTML = `<b>${esc(iv.n)}</b>${req ? `<small>Pré-requisito: ${esc(req)}</small>` : ""}<p>${esc(iv.d)}</p>`;
-  tipEl.hidden = false;
-  const r = label.getBoundingClientRect(), w = tipEl.offsetWidth, h = tipEl.offsetHeight, vw = innerWidth, vh = innerHeight;
-  let x = r.right + 12, y = r.top - 6;
-  if (x + w > vw - 8) { x = Math.max(8, Math.min(r.left, vw - w - 8)); y = r.bottom + 8; if (y + h > vh - 8) y = r.top - h - 8; }
-  tipEl.style.left = x + "px"; tipEl.style.top = Math.max(8, Math.min(y, vh - h - 8)) + "px";
-}
-const hideTip = () => { tipEl.hidden = true; tipFor = null; };
-document.addEventListener("mouseover", e => { const l = e.target.closest("[data-tip]"); if (l) showTip(l); });
-document.addEventListener("mouseout", e => { const l = e.target.closest("[data-tip]"); if (l && !l.contains(e.relatedTarget)) hideTip(); });
-document.addEventListener("focusin", e => { const l = e.target.closest("[data-tip]"); l ? showTip(l) : hideTip(); });
-document.addEventListener("scroll", () => { if (tipFor && tipFor.isConnected && tipFor.matches(":hover, :focus-within")) showTip(tipFor); else hideTip(); }, true);
 
 renderAll();
 
