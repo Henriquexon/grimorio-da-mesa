@@ -995,6 +995,51 @@ function example() {
   return { id: uid(), name: "Zariel (exemplo)", race: "tiefling", sub: "", cls: "bruxo", subc: "corruptor", level: 5, score: 16, pact: "tomo",
     inv: ["armadura", "visao", "agouro"], spells: sp.map(([id, via]) => ({ id, via })), prep: [], used: blankUsed() };
 }
+const HELLBOY_ARCANA = "hellboy-fireball-arcana";
+SP[HELLBOY_ARCANA] = {
+  ...SP.fireball, id: HELLBOY_ARCANA, n: "Bola de Fogo (Arcana)", l: 6, cl: ["Bu"], hi: "",
+  desc: "Versão da ficha de Hellboy. Uma explosão de fogo em uma esfera de 6 m de raio causa 11d6 de dano de fogo. Cada criatura na área faz um teste de resistência de Destreza e sofre metade do dano em caso de sucesso. A chama contorna cantos e incendeia objetos inflamáveis que ninguém esteja vestindo ou carregando."
+};
+const HELLBOY = {
+  "20": { hp: 123, ac: 14, primary: "bruxo", subclass: "corruptor", classLevel: 17, castingScore: 20,
+    inv: ["agonizante", "repulsiva", "sedenta", "mascara", "bebedor", "bruxa", "reinos"],
+    spells: ["mage-hand", "poison-spray", "chill-touch", "prestidigitation", "arms-of-hadar", "hex", "burning-hands", "hellish-rebuke",
+      "shatter", "cloud-of-daggers", "invisibility", "scorching-ray", "fireball", "hunger-of-hadar", "remove-curse", "blight", "flame-strike", "hold-monster"],
+    art: ["mending", "fire-bolt", "alarm", "false-life", "detect-magic", "identify", "cure-wounds", "faerie-fire"] },
+  "6": { hp: 45, ac: 15, primary: "feiticeiro", subclass: "draconica", classLevel: 3, castingScore: 16,
+    inv: [], spells: ["mage-hand", "message", "ray-of-frost", "chill-touch", "magic-missile", "disguise-self", "invisibility", "cloud-of-daggers"],
+    art: ["mending", "fire-bolt", "alarm", "false-life", "detect-magic", "identify"] }
+};
+function hellboyPreset(version) {
+  const data = HELLBOY[version];
+  const spells = data.spells.map(id => ({ id, via: "class" }));
+  spells.push({ id: "eldritch-blast", via: "atirador-magia" });
+  if (version === "20") {
+    spells.push(...[HELLBOY_ARCANA, "finger-of-death", "dominate-monster", "power-word-kill"]
+      .map((id, index) => ({ id, via: "arc" + (6 + index) })));
+  }
+  return fix({
+    ...newChar(), name: "Hellboy / Anung un Rama (nível " + version + ")", preset: "hellboy-" + version,
+    cls: data.primary, subc: data.subclass, level: data.classLevel, score: data.castingScore,
+    scores: { for: 21, des: 12, con: 14, int: data.castingScore, sab: 8, car: data.castingScore },
+    pact: version === "20" ? "lamina" : "", inv: data.inv, spells,
+    multiclass: [{ cls: "artifice", subc: "atirador", level: 3, spells: data.art.map(id => ({ id, via: "class" })) }]
+  });
+}
+function renderHellboyReference(c) {
+  const version = character(c).preset?.slice(8);
+  if (!Object.hasOwn(HELLBOY, version)) return "";
+  const data = HELLBOY[version];
+  return `<details class="field"><summary>Ficha de referência · Hellboy ${version}</summary>
+    <p><b>PV:</b> ${data.hp} · <b>CA:</b> ${data.ac} · Humano Variante · Sábio</p>
+    <p>Resistência a fogo e visão no escuro de 18 m. Proficiências da ficha: armaduras leves e médias, escudos, armas simples, testes de Constituição e Inteligência. Perícias: Investigação, Percepção, Enganação, Arcanismo e História.</p>
+    ${version === "6" ? "<p>Linhagem dracônica vermelha. 3 pontos de feitiçaria; Magia Acelerada e Magia Potencializada.</p>" : "<p>Excalibur é a arma de pacto: +1, versátil, 1d8 ou 1d10 cortante + 1d4 de fogo + 1, conforme a ficha.</p>"}
+    <p><b>O Samaritano:</b> a aliança se torna um revólver com Rajada Mística e soma Carisma ao dano.</p>
+    <p><b>Chave da Baia:</b> permite usar Mansão Magnífica de Mordenkainen uma vez por semana.</p>
+    <p><b>Mão Direita da Perdição:</b> exige Constituição 13 e sintonia, fixa Força em 21, concede +1 de CA e proficiência em testes de resistência de Força.</p>
+    <p><b>Infusões:</b> Arma Aprimorada na azagaia (9/36 m, 1d6 + Força + 1 perfurante) e Foco Arcano Aprimorado (+1 no ataque mágico e ignora meia cobertura nesses ataques).</p>
+  </details>`;
+}
 const clampScore = value => Math.max(1, Math.min(30, parseInt(value, 10) || 10));
 const classStates = c => [c, ...(c.multiclass || [])];
 const characterLevel = c => classStates(c).reduce((total, entry) => total + entry.level, 0);
@@ -1019,17 +1064,26 @@ function classView(c, entry) {
 }
 function fixClass(c) {
   c.inv = Array.isArray(c.inv) ? [...new Set(c.inv.filter(key => Object.hasOwn(INVOCATIONS, key)))] : [];
-  c.spells = Array.isArray(c.spells) ? c.spells.filter(x => x && Object.hasOwn(SP, x.id) && typeof x.via === "string") : [];
+  const seenSpells = new Set();
+  c.spells = (Array.isArray(c.spells) ? c.spells : []).filter(sp => {
+    if (!sp || typeof sp.id !== "string" || typeof sp.via !== "string" || !Object.hasOwn(SP, sp.id)) return false;
+    const key = JSON.stringify([sp.id, sp.via]);
+    if (seenSpells.has(key)) return false;
+    seenSpells.add(key);
+    return true;
+  });
   c.prep = Array.isArray(c.prep) ? [...new Set(c.prep.filter(id => c.spells.some(x => x.id === id && x.via === "class" && SP[id].l > 0)))] : [];
   if (!Object.hasOwn(CLASSES, c.cls)) c.cls = "bardo";
   c.level = clampLvl(c.level);
-  c.subc = typeof c.subc === "string" ? c.subc : "";
-  c.pact = typeof c.pact === "string" ? c.pact : "";
+  c.subc = Object.hasOwn(CLASSES[c.cls].subs || {}, c.subc) ? c.subc : "";
+  c.pact = Object.hasOwn(PACTS, c.pact) ? c.pact : "";
   return c;
 }
 function fix(c) {
   fixClass(c);
   if (!Object.hasOwn(RACES, c.race)) c.race = "humano";
+  c.preset = ["hellboy-20", "hellboy-6"].includes(c.preset) ? c.preset : "";
+  if (c.preset !== "hellboy-20") c.spells = c.spells.filter(sp => sp.id !== HELLBOY_ARCANA);
   c.score = clampScore(c.score);
   const scores = c.scores || {};
   c.scores = Object.fromEntries(Object.keys(AB_NAMES).filter(key => Object.hasOwn(scores, key))
@@ -1053,7 +1107,10 @@ function fix(c) {
 function load() {
   try {
     const j = JSON.parse(localStorage.getItem(KEY));
-    if (j && Array.isArray(j.chars) && j.chars.length) { j.chars.forEach(fix); return j; }
+    if (j && Array.isArray(j.chars)) {
+      const chars = j.chars.filter(c => c && typeof c === "object" && !Array.isArray(c)).map(fix);
+      if (chars.length) return { chars, cur: chars.some(c => c.id === j.cur) ? j.cur : chars[0].id };
+    }
   } catch (e) {}
   const ex = fix(example());
   return { chars: [ex], cur: ex.id };
@@ -1205,6 +1262,7 @@ function candidates(c, mode) {
   }
   const p = picks(c).find(p => p.key === mode);
   if (!p) return [];
+  if (mode === "arc6" && c.preset === "hellboy-20") return [SP[HELLBOY_ARCANA], ...SORTED_SPELLS.filter(s => s.l === 6 && s.cl.includes("Bu"))];
   if (p.spells) return SORTED_SPELLS.filter(sp => p.spells[sp.en] && p.spells[sp.en][0] <= c.level);
   const hi = p.max === "ritual-book" ? Math.floor(c.level / 2) : p.max === "max" ? mx : p.max;
   return SORTED_SPELLS.filter(s => (!p.list || s.cl.includes(p.list)) && s.l >= p.min && s.l <= hi && (!p.rit || s.rit));
@@ -1290,7 +1348,9 @@ function keepOpen(container, render) {
 function renderChips() {
   $("#chips").innerHTML = DB.chars.map(c => `<button class="chip${c.id === DB.cur ? " on" : ""}" data-act="pick-char" data-id="${c.id}" aria-pressed="${c.id === DB.cur}">
       <span class="chip-name">${esc(c.name || "Sem nome")}</span><span class="chip-sub">${esc(classLabel(c))}</span></button>`).join("")
-    + `<button class="chip add" data-act="new-char"><span class="chip-name">+ Novo personagem</span></button>`;
+    + `<button class="chip add" data-act="new-char"><span class="chip-name">+ Novo personagem</span></button>
+      <button class="chip add" data-act="hellboy" data-level="20"><span class="chip-name">+ Hellboy</span><span class="chip-sub">Nível 20</span></button>
+      <button class="chip add" data-act="hellboy" data-level="6"><span class="chip-name">+ Hellboy</span><span class="chip-sub">Nível 6</span></button>`;
 }
 function renderSheet() {
   const c = cur(), R = RACES[c.race], C = CLASSES[c.cls], ab = abilityKey(c);
@@ -1333,6 +1393,7 @@ function renderSheet() {
   h += `<div class="sheet-actions"><button type="button" class="btn ghost" data-act="export">Exportar</button><button type="button" class="btn ghost" data-act="import">Importar</button>`
     + (ui.confirmDel ? `<button type="button" class="btn danger" data-act="del-yes">Confirmar exclusão</button><button type="button" class="btn ghost" data-act="del-no">Cancelar</button>`
       : `<button type="button" class="btn ghost danger-text" data-act="del">Excluir</button>`) + `</div>`;
+  h += renderHellboyReference(c);
   if (ui.panel) h += renderPanel(c);
   h += `</section>`;
   $("#sheet").innerHTML = h;
@@ -1469,7 +1530,7 @@ function renderGrim(c) {
     h += `<section class="group"><h3 class="group-title">${lvlGroup(+l)} <small>${list.length}</small></h3>`;
     h += list.map(({ x, sp }) => {
       const badges = [];
-      if (x.via !== "class") badges.push({ t: pk[x.via] ? pk[x.via].label.split(":")[0] : "Escolha especial", cls: "pick" });
+      if (x.via !== "class") badges.push({ t: pk[x.via] ? pk[x.via].label.split(":")[0] : x.via === "atirador-magia" ? "Atirador de Magia" : "Escolha especial", cls: "pick" });
       else if (!ci || (!sp.cl.includes(ci.list) && !exp.has(sp.id))) badges.push({ t: "Fora da lista atual", cls: "warn" });
       else if (exp.has(sp.id) && !sp.cl.includes(ci.list)) badges.push({ t: "Patrono", cls: "exp" });
       if (x.via === "class" && ci && sp.l > maxLvl(c)) badges.push({ t: "Nível alto demais", cls: "warn" });
@@ -1600,8 +1661,13 @@ document.addEventListener("click", e => {
   $("#limit-notice").textContent = "";
   switch (act) {
     case "pick-char": DB.cur = t.dataset.id; ui.activeClass = ""; ui.multiclassOpen = false; ui.confirmDel = false; ui.panel = null; save(); renderAll(); break;
+    case "hellboy":
     case "new-char": {
-      const n = fix(newChar()); DB.chars.push(n); DB.cur = n.id; ui.activeClass = ""; ui.multiclassOpen = false; ui.confirmDel = false; ui.panel = null; save(); renderAll();
+      const version = t.dataset.level;
+      if (act === "hellboy" && !Object.hasOwn(HELLBOY, version)) break;
+      const n = act === "hellboy" ? hellboyPreset(version) : fix(newChar()); DB.chars.push(n); DB.cur = n.id; ui.activeClass = ""; ui.multiclassOpen = false; ui.confirmDel = false; ui.panel = null;
+      if (act === "hellboy") ui.tab = "grim";
+      save(); renderAll();
       const f = $("#f-name"); if (f) { f.focus(); f.select(); }
       break;
     }
@@ -1699,7 +1765,7 @@ document.addEventListener("click", e => {
     }
     case "rm":
       c.spells = c.spells.filter(x => !(x.id === t.dataset.id && x.via === t.dataset.via));
-      c.prep = c.prep.filter(id => c.spells.some(x => x.id === id));
+      c.prep = c.prep.filter(id => c.spells.some(x => x.id === id && x.via === "class"));
       save(); refreshSummary(); keepOpen($("#tabbody"), renderTab); break;
     case "prep": {
       const id = t.dataset.id, before = counters(c);
