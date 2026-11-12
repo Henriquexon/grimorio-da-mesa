@@ -1047,7 +1047,10 @@ function renderHellboyReference(c) {
     <p><b>Infusões:</b> Arma Aprimorada na azagaia (9/36 m, 1d6 + Força + 1 perfurante) e Foco Arcano Aprimorado (+1 no ataque mágico e ignora meia cobertura nesses ataques).</p>
   </details>`;
 }
-const clampScore = value => Math.max(1, Math.min(30, parseInt(value, 10) || 10));
+const clampScore = value => {
+  const score = parseInt(value, 10);
+  return Number.isNaN(score) ? 10 : Math.max(1, Math.min(30, score));
+};
 const classStates = c => [c, ...(c.multiclass || [])];
 const characterLevel = c => classStates(c).reduce((total, entry) => total + entry.level, 0);
 const classLabel = c => classStates(c).map(entry => CLASSES[entry.cls].n + " " + entry.level).join(" / ");
@@ -1378,11 +1381,17 @@ function renderSheet() {
         : `<label class="field"><span>Classe</span><select id="f-cls">${options.map(k => opt(k, CLASSES[k].n, c.cls)).join("")}</select></label>`}
       <div class="field"><label for="f-level">Nível</label><div class="stepper"><button type="button" data-act="lvl" data-d="-1" aria-label="Diminuir nível">−</button><input id="f-level" type="number" min="1" max="${cap}" value="${c.level}" inputmode="numeric"><button type="button" data-act="lvl" data-d="1" aria-label="Aumentar nível">+</button></div></div>
     </div>`;
+  h += `<div class="field"><label for="f-score">Valor de ${AB_NAMES[ab]}</label><div class="score"><input id="f-score" data-score="${ab}" type="number" min="1" max="30" value="${scoreFor(c, ab)}" inputmode="numeric"><output id="f-mod" for="f-score">${signed(abMod(c))}</output></div></div>`;
   if (C.subs) {
-    const hint = c.subc && c.level < C.subAt ? `<small class="hint warn">Os efeitos começam no ${C.subAt}º nível.</small>` : `<small class="hint">Escolhida no ${C.subAt}º nível de ${esc(C.n)}.</small>`;
+    const hint = c.subc && c.level < C.subAt ? `<small class="hint warn">Os efeitos começam no ${C.subAt}º nível.</small>` : c.cls === "bruxo" ? "" : `<small class="hint">Escolhida no ${C.subAt}º nível de ${esc(C.n)}.</small>`;
     h += `<label class="field"><span>${esc(C.subTitle)}</span><select id="f-subc"><option value="">Escolha…</option>${Object.keys(C.subs).map(k => opt(k, C.subs[k].n, c.subc)).join("")}</select>${hint}</label>`;
   }
-  h += `<div class="field"><label for="f-score">Valor de ${AB_NAMES[ab]}</label><div class="score"><input id="f-score" data-score="${ab}" type="number" min="1" max="30" value="${scoreFor(c, ab)}" inputmode="numeric"><output id="f-mod" for="f-score">${signed(abMod(c))}</output></div></div>
+  if (c.cls === "bruxo") {
+    h += `<label class="field"><span>Dádiva do Pacto</span><select id="f-pact"><option value="">Nenhuma</option>${Object.keys(PACTS).map(k => opt(k, PACTS[k].n, c.pact)).join("")}</select>${c.level < 3 ? '<small class="hint warn">Recebida no 3º nível.</small>' : ""}</label>`;
+    h += `<button type="button" class="btn ghost" data-act="tab" data-tab="inv">Gerenciar Invocações Místicas</button>
+      <button type="button" class="btn ghost" data-act="tab" data-tab="arc">Gerenciar Arcanas Místicas</button>`;
+  }
+  h += `
     <details class="field" id="multiclass-options"${ui.multiclassOpen ? " open" : ""}>
       <summary>Multiclasse</summary>
       <p class="hint">Nível total: ${characterLevel(root)}/20. Para adicionar uma classe, preencha os atributos exigidos pelas duas classes.</p>
@@ -1393,11 +1402,6 @@ function renderSheet() {
       ${c !== root ? `<button type="button" class="btn ghost danger-text" data-act="remove-class">Remover ${esc(C.n)}</button>` : ""}
       <small id="multiclass-msg" class="hint warn" role="status">${unmet.map(entry => esc(CLASSES[entry.cls].n + " exige " + prerequisiteText(entry.cls) + ".")).join(" ")}</small>
     </details>`;
-  if (c.cls === "bruxo") {
-    h += `<label class="field"><span>Dádiva do Pacto</span><select id="f-pact"><option value="">Nenhuma</option>${Object.keys(PACTS).map(k => opt(k, PACTS[k].n, c.pact)).join("")}</select>${c.level < 3 ? '<small class="hint warn">Recebida no 3º nível.</small>' : ""}</label>`;
-    h += `<button type="button" class="btn ghost" data-act="tab" data-tab="inv">Gerenciar Invocações Místicas</button>
-      <button type="button" class="btn ghost" data-act="tab" data-tab="arc">Gerenciar Arcanas Místicas</button>`;
-  }
   h += `<div class="sheet-actions"><button type="button" class="btn ghost" data-act="export">Exportar</button><button type="button" class="btn ghost" data-act="import">Importar</button>`
     + (ui.confirmDel ? `<button type="button" class="btn danger" data-act="del-yes">Confirmar exclusão</button><button type="button" class="btn ghost" data-act="del-no">Cancelar</button>`
       : `<button type="button" class="btn ghost danger-text" data-act="del">Excluir</button>`) + `</div>`;
@@ -1646,7 +1650,7 @@ function renderAllList() {
 }
 
 function renderAll() { renderChips(); renderSheet(); renderMain(); }
-function rulesChanged() { save(); renderChips(); renderSheet(); renderMain(); }
+function rulesChanged() { save(); renderAll(); }
 let noticeTimer;
 function warnLimits(c, before) {
   const messages = counters(c).flatMap((counter, index) => {
@@ -1878,7 +1882,6 @@ document.addEventListener("click", e => {
     case "del-yes":
       DB.chars = DB.chars.filter(x => x.id !== c.id);
       if (!DB.chars.length) DB.chars.push(fix(newChar()));
-      ui.activeClass = ""; ui.multiclassOpen = false;
       DB.cur = DB.chars[0].id;
       if (!selectAccessibleCharacter()) selectCharacter(DB.cur);
       break;
