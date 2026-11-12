@@ -85,7 +85,13 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
     scrollbar-gutter:stable;
   }
 }
+@media (max-width:880px), (hover:none) and (pointer:coarse){
+  :root{--grain:none;--blotch:none;--hide:none}
+  body{background-image:none;background-attachment:scroll}
+  .wrap{background-image:none;box-shadow:inset 0 0 0 1px var(--gold)}
+}
 @media (max-width:880px){#sheet{position:static}}
+.spell-pages{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin-top:14px}
 #hellboy-access{width:min(400px,calc(100% - 32px));padding:0;border:1px solid var(--gold);border-radius:var(--radius);color:var(--ink);background:var(--surface)}
 #hellboy-access::backdrop{background:rgb(42 28 16 / .6)}
 #hellboy-access-message:empty{display:none}
@@ -1603,7 +1609,25 @@ const isBookRitual = via => via === "livro" || via === "livro-copia";
 function hasSpell(c, id, mode) {
   return c.spells.some(x => x.id === id && isBookRitual(x.via) === isBookRitual(mode));
 }
-function renderAddList() {
+const SPELL_PAGE_SIZE = 40;
+function renderSpellPage(el, list, renderRow, page) {
+  const pages = Math.ceil(list.length / SPELL_PAGE_SIZE);
+  page = Math.max(0, Math.min(page, pages - 1));
+  el.dataset.page = page;
+  const start = page * SPELL_PAGE_SIZE;
+  keepOpen(el, () => {
+    el.innerHTML = pages ? withHeaders(list.slice(start, start + SPELL_PAGE_SIZE), renderRow)
+      : '<p class="empty">Nenhuma magia encontrada com esses filtros.</p>';
+    if (pages > 1) {
+      el.insertAdjacentHTML("beforeend", `<nav class="spell-pages" aria-label="Páginas de magias">
+        <button type="button" class="btn ghost" data-act="spell-page" data-step="-1"${page === 0 ? " disabled" : ""}>Anterior</button>
+        <span>Página ${page + 1} de ${pages}</span>
+        <button type="button" class="btn ghost" data-act="spell-page" data-step="1"${page === pages - 1 ? " disabled" : ""}>Próxima</button>
+      </nav>`);
+    }
+  });
+}
+function renderAddList(page = 0) {
   const c = cur(), el = $("#a-list");
   if (!el) return;
   let list = candidates(c, ui.mode);
@@ -1611,20 +1635,17 @@ function renderAddList() {
   if (q) list = list.filter(s => spellSearch.get(s.id).some(name => name.includes(q)));
   if (ui.lvl !== "all") list = list.filter(s => s.l === +ui.lvl);
   if (ui.school) list = list.filter(s => s.s === ui.school);
-  if (!list.length) { el.innerHTML = '<p class="empty">Nenhuma magia encontrada com esses filtros.</p>'; return; }
   const exp = expIds(c), gr = new Set(grants(c).map(g => g.sp.id)), ci = castInfo(c);
-  keepOpen(el, () => {
-    el.innerHTML = withHeaders(list, sp => {
-      const has = hasSpell(c, sp.id, ui.mode);
-      const badges = [];
-      if (ui.mode === "class" && exp.has(sp.id) && !sp.cl.includes(ci.list)) badges.push({ t: "Patrono", cls: "exp" });
-      if (gr.has(sp.id)) badges.push({ t: "Já concedida", cls: "src" });
-      if (ui.mode === "class" && sp.l > 0 && ci.schools && !ci.schools.includes(sp.s)) badges.push({ t: "Outra escola", cls: "warn" });
-      const act = has ? `<span class="have">No grimório</span>`
-        : `<button type="button" class="btn sm" data-act="add" data-id="${sp.id}">Adicionar</button>`;
-      return spellRow(sp, { badges, action: act });
-    });
-  });
+  renderSpellPage(el, list, sp => {
+    const has = hasSpell(c, sp.id, ui.mode);
+    const badges = [];
+    if (ui.mode === "class" && exp.has(sp.id) && !sp.cl.includes(ci.list)) badges.push({ t: "Patrono", cls: "exp" });
+    if (gr.has(sp.id)) badges.push({ t: "Já concedida", cls: "src" });
+    if (ui.mode === "class" && sp.l > 0 && ci.schools && !ci.schools.includes(sp.s)) badges.push({ t: "Outra escola", cls: "warn" });
+    const act = has ? `<span class="have">No grimório</span>`
+      : `<button type="button" class="btn sm" data-act="add" data-id="${sp.id}">Adicionar</button>`;
+    return spellRow(sp, { badges, action: act });
+  }, page);
 }
 
 function renderAllShell() {
@@ -1638,7 +1659,7 @@ function renderAllShell() {
       <span class="toggles"><label class="check inline"><input type="checkbox" id="c-conc"${ui.conc ? " checked" : ""}><span>Concentração</span></label><label class="check inline"><input type="checkbox" id="c-rit"${ui.rit ? " checked" : ""}><span>Ritual</span></label></span></div>
     <p class="mode-info" id="c-count"></p><div id="c-list"></div>`;
 }
-function renderAllList() {
+function renderAllList(page = 0) {
   const el = $("#c-list");
   if (!el) return;
   let list = SORTED_SPELLS;
@@ -1650,7 +1671,7 @@ function renderAllList() {
   if (ui.conc) list = list.filter(s => s.conc);
   if (ui.rit) list = list.filter(s => s.rit);
   $("#c-count").textContent = `${list.length} de ${SPELLS.length} magias.`;
-  keepOpen(el, () => { el.innerHTML = list.length ? withHeaders(list, sp => spellRow(sp)) : '<p class="empty">Nenhuma magia encontrada com esses filtros.</p>'; });
+  renderSpellPage(el, list, sp => spellRow(sp), page);
 }
 
 function renderAll() { renderChips(); renderSheet(); renderMain(); }
@@ -1848,7 +1869,7 @@ document.addEventListener("click", e => {
       c.spells.push({ id: t.dataset.id, via: ui.mode });
       save(); refreshSummary();
       { const info = $(".mode-info"); if (info && ui.mode !== "class") { const p = picks(c).find(p => p.key === ui.mode); if (p) info.textContent = `${p.label}. Escolhidas: ${c.spells.filter(x => x.via === p.key).length}${Number.isFinite(p.count) ? ` de ${p.count}` : ""}.`; } }
-      renderAddList(); warnLimits(c, before); break;
+      renderAddList(Number($("#a-list").dataset.page)); warnLimits(c, before); break;
     }
     case "rm":
       c.spells = c.spells.filter(x => !(x.id === t.dataset.id && x.via === t.dataset.via));
@@ -1858,6 +1879,19 @@ document.addEventListener("click", e => {
       const id = t.dataset.id, before = counters(c);
       c.prep = c.prep.includes(id) ? c.prep.filter(x => x !== id) : c.prep.concat(id);
       save(); refreshSummary(); keepOpen($("#tabbody"), renderTab); warnLimits(c, before); break;
+    }
+    case "spell-page": {
+      const list = t.closest("#a-list, #c-list");
+      if (!list) break;
+      const render = list.id === "a-list" ? renderAddList : renderAllList;
+      render(Number(list.dataset.page) + Number(t.dataset.step));
+      const heading = list.querySelector(".list-head");
+      if (heading) {
+        heading.tabIndex = -1;
+        heading.focus();
+        heading.scrollIntoView({ block: "start" });
+      }
+      break;
     }
     case "a-lvl": ui.lvl = t.dataset.l; document.querySelectorAll('[data-act="a-lvl"]').forEach(b => { const on = b.dataset.l === ui.lvl; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); }); renderAddList(); break;
     case "c-lvl": ui.clvl = t.dataset.l; document.querySelectorAll('[data-act="c-lvl"]').forEach(b => { const on = b.dataset.l === ui.clvl; b.classList.toggle("on", on); b.setAttribute("aria-pressed", on); }); renderAllList(); break;
@@ -1892,6 +1926,7 @@ document.addEventListener("click", e => {
   }
 });
 
+let spellSearchTimer;
 document.addEventListener("input", e => {
   const t = e.target, c = cur();
   if (t.id === "f-name") {
@@ -1904,8 +1939,14 @@ document.addEventListener("input", e => {
     if (key === abilityKey(root)) root.score = root.scores[key];
     $("#f-mod").textContent = signed(abMod(c));
     save(); refreshSummary();
-  } else if (t.id === "a-q") { ui.q = t.value; renderAddList(); }
-  else if (t.id === "c-q") { ui.cq = t.value; renderAllList(); }
+  } else if (t.id === "a-q" || t.id === "c-q") {
+    const isAdd = t.id === "a-q";
+    ui[isAdd ? "q" : "cq"] = t.value;
+    clearTimeout(spellSearchTimer);
+    spellSearchTimer = setTimeout(() => {
+      if (t.isConnected) (isAdd ? renderAddList : renderAllList)();
+    }, 120);
+  }
 });
 
 document.addEventListener("change", e => {
