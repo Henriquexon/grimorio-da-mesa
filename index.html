@@ -54,7 +54,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
 .wrap::after{top:14px;right:18px}
 
 /* Cabeçalho */
-.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px 24px;padding-bottom:22px;margin-bottom:22px;position:relative;
+.top{display:flex;flex-direction:column;align-items:flex-start;gap:16px;padding-bottom:22px;margin-bottom:22px;position:relative;
   background:linear-gradient(90deg, transparent, var(--gold) 20%, var(--gold) 80%, transparent) bottom/100% 1px no-repeat}
 .top::after{content:"✦ ❧ ✦";position:absolute;left:50%;bottom:-.72em;transform:translateX(-50%);padding-inline:10px;background:var(--page);color:var(--accent);font-size:.9rem;letter-spacing:.3em;white-space:nowrap}
 .brand{display:flex;align-items:center;gap:14px}
@@ -62,7 +62,7 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
 .brand h1{font-size:2.3rem;line-height:1;color:var(--accent);text-shadow:0 1px 0 rgb(255 245 215 / .35)}
 .brand h1::first-letter{font-size:1.25em;color:var(--brass)}
 .brand p{margin:6px 0 0;color:var(--muted);font-family:var(--fell);font-style:italic;font-size:1rem}
-.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips{display:flex;flex-wrap:wrap;justify-content:flex-start;gap:8px;width:100%}
 .chip{display:flex;flex-direction:column;align-items:flex-start;gap:0;border:1px solid var(--line);background:var(--surface);border-radius:2px;padding:6px 14px 8px;cursor:pointer;text-align:left;min-width:0;max-width:220px;box-shadow:var(--shadow)}
 .chip:hover{border-color:var(--accent)}
 .chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);box-shadow:inset 0 0 0 2px var(--accent),inset 0 0 0 3px var(--gold)}
@@ -1361,7 +1361,8 @@ function renderChips() {
       <span class="chip-name">${esc(c.name || "Sem nome")}</span><span class="chip-sub">${esc(classLabel(c))}</span></button>`).join("")
     + `<button class="chip add" data-act="new-char"><span class="chip-name">+ Novo personagem</span></button>
       <button class="chip add" data-act="hellboy" data-level="20"><span class="chip-name">+ Hellboy</span><span class="chip-sub">Nível 20</span></button>
-      <button class="chip add" data-act="hellboy" data-level="6"><span class="chip-name">+ Hellboy</span><span class="chip-sub">Nível 6</span></button>`;
+      <button class="chip add" data-act="hellboy" data-level="6"><span class="chip-name">+ Hellboy</span><span class="chip-sub">Nível 6</span></button>
+      ${hellboyUnlocked ? '<button class="chip add" data-act="lock-hellboy"><span class="chip-name">desvencilhar senha</span></button>' : ""}`;
 }
 function renderSheet() {
   const c = cur(), R = RACES[c.race], C = CLASSES[c.cls], ab = abilityKey(c);
@@ -1673,9 +1674,33 @@ const HELLBOY_ACCESS_KEY = KEY + "-hellboy-access";
 const HELLBOY_PASSWORD_HASH = "18d1c8122895b2eb830db203681b9c6fc13e9f4320046594ffdfb6a1bb110ee8";
 let hellboyUnlocked = false;
 try { hellboyUnlocked = sessionStorage.getItem(HELLBOY_ACCESS_KEY) === "1"; } catch {}
+let pendingHellboyAction;
+const hellboyDialog = $("#hellboy-access");
+function requestHellboyAccess(action) {
+  if (hellboyUnlocked) { action(); return; }
+  pendingHellboyAction = action;
+  $("#hellboy-access-form").reset();
+  $("#hellboy-access-message").textContent = "";
+  hellboyDialog.showModal();
+}
+function selectCharacter(id) {
+  DB.cur = id;
+  ui.activeClass = ""; ui.multiclassOpen = false; ui.confirmDel = false; ui.panel = null;
+  save(); renderAll();
+}
+function selectAccessibleCharacter() {
+  if (hellboyUnlocked || !DB.chars.find(entry => entry.id === DB.cur)?.preset) return false;
+  let fallback = DB.chars.find(entry => !entry.preset);
+  if (!fallback) {
+    fallback = fix(newChar());
+    DB.chars.push(fallback);
+  }
+  selectCharacter(fallback.id);
+  return true;
+}
 $("#hellboy-access-form").addEventListener("submit", async e => {
   e.preventDefault();
-  const dialog = $("#hellboy-access"), version = dialog.dataset.level;
+  const action = pendingHellboyAction;
   const input = $("#hellboy-password"), message = $("#hellboy-access-message");
   const password = input.value.normalize("NFC");
   input.value = "";
@@ -1684,10 +1709,12 @@ $("#hellboy-access-form").addEventListener("submit", async e => {
     const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(password));
     hash = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
   } catch {
-    message.textContent = "Não foi possível verificar a senha. Abra o site por HTTPS.";
+    if (hellboyDialog.open && action === pendingHellboyAction) {
+      message.textContent = "Não foi possível verificar a senha. Abra o site por HTTPS.";
+    }
     return;
   }
-  if (!dialog.open || version !== dialog.dataset.level) return;
+  if (!hellboyDialog.open || action !== pendingHellboyAction) return;
   if (hash !== HELLBOY_PASSWORD_HASH) {
     message.textContent = "Senha incorreta.";
     input.focus();
@@ -1695,8 +1722,8 @@ $("#hellboy-access-form").addEventListener("submit", async e => {
   }
   hellboyUnlocked = true;
   try { sessionStorage.setItem(HELLBOY_ACCESS_KEY, "1"); } catch {}
-  dialog.close();
-  addCharacter(hellboyPreset(version), "grim");
+  hellboyDialog.close();
+  action();
 });
 
 // ───── Eventos ─────
@@ -1707,19 +1734,25 @@ document.addEventListener("click", e => {
   const c = cur(), act = t.dataset.act;
   $("#limit-notice").textContent = "";
   switch (act) {
-    case "pick-char": DB.cur = t.dataset.id; ui.activeClass = ""; ui.multiclassOpen = false; ui.confirmDel = false; ui.panel = null; save(); renderAll(); break;
-    case "hellboy": {
-      const version = t.dataset.level;
-      if (!Object.hasOwn(HELLBOY, version)) break;
-      if (hellboyUnlocked) { addCharacter(hellboyPreset(version), "grim"); break; }
-      const dialog = $("#hellboy-access");
-      dialog.dataset.level = version;
-      $("#hellboy-access-form").reset();
-      $("#hellboy-access-message").textContent = "";
-      dialog.showModal();
+    case "pick-char": {
+      const entry = DB.chars.find(item => item.id === t.dataset.id);
+      if (!entry) break;
+      if (entry.preset) requestHellboyAccess(() => selectCharacter(entry.id));
+      else selectCharacter(entry.id);
       break;
     }
-    case "cancel-hellboy": $("#hellboy-access").close(); break;
+    case "hellboy": {
+      const version = t.dataset.level;
+      if (Object.hasOwn(HELLBOY, version)) requestHellboyAccess(() => addCharacter(hellboyPreset(version), "grim"));
+      break;
+    }
+    case "lock-hellboy":
+      hellboyUnlocked = false;
+      try { sessionStorage.removeItem(HELLBOY_ACCESS_KEY); } catch {}
+      if (!selectAccessibleCharacter()) renderChips();
+      $("#chips [data-act='hellboy']").focus();
+      break;
+    case "cancel-hellboy": hellboyDialog.close(); break;
     case "new-char": addCharacter(fix(newChar())); break;
     case "lvl": setClassLevel(c, c.level + Number(t.dataset.d)); break;
     case "add-class": {
@@ -1839,7 +1872,8 @@ document.addEventListener("click", e => {
         const j = JSON.parse($("#io-text").value.trim());
         if (!j || !Object.hasOwn(CLASSES, j.cls) || !Object.hasOwn(RACES, j.race)) throw new Error("x");
         const n = fix(Object.assign({}, j, { id: uid() }));
-        DB.chars.push(n); DB.cur = n.id; ui.activeClass = ""; ui.multiclassOpen = false; ui.panel = null; save(); renderAll();
+        if (n.preset) requestHellboyAccess(() => addCharacter(n));
+        else addCharacter(n);
       } catch (err) { msg.textContent = "Esse código não parece uma ficha exportada deste site. Confira se copiou o texto inteiro."; msg.classList.add("warn"); }
       break;
     }
@@ -1849,7 +1883,9 @@ document.addEventListener("click", e => {
       DB.chars = DB.chars.filter(x => x.id !== c.id);
       if (!DB.chars.length) DB.chars.push(fix(newChar()));
       ui.activeClass = ""; ui.multiclassOpen = false;
-      DB.cur = DB.chars[0].id; ui.confirmDel = false; save(); renderAll(); break;
+      DB.cur = DB.chars[0].id;
+      if (!selectAccessibleCharacter()) selectCharacter(DB.cur);
+      break;
   }
 });
 
@@ -1899,7 +1935,7 @@ document.addEventListener("toggle", e => {
   else if (e.target.matches("details.spell")) renderSpellBody(e.target);
 }, true);
 
-renderAll();
+if (!selectAccessibleCharacter()) renderAll();
 
 </script>
 
