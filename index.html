@@ -86,6 +86,9 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
   }
 }
 @media (max-width:880px){#sheet{position:static}}
+#hellboy-access{width:min(400px,calc(100% - 32px));padding:0;border:1px solid var(--gold);border-radius:var(--radius);color:var(--ink);background:var(--surface)}
+#hellboy-access::backdrop{background:rgb(42 28 16 / .6)}
+#hellboy-access-message:empty{display:none}
 .panel-title{font-size:1.45rem;color:var(--accent);border-bottom:1px solid var(--line);padding-bottom:6px}
 
 /* Campos */
@@ -259,6 +262,14 @@ h1,h2,h3{font-family:var(--display);font-weight:400;margin:0;text-wrap:balance;l
   <p class="foot">Descrições resumidas do Livro do Jogador, de Tasha e de Xanathar. As fichas ficam salvas só neste navegador.</p>
 </div>
 <div id="limit-notice" class="limit-notice" role="status" aria-live="polite" aria-atomic="true"></div>
+<dialog id="hellboy-access" aria-labelledby="hellboy-access-title">
+  <form class="panel" id="hellboy-access-form">
+    <h2 class="panel-title" id="hellboy-access-title">Acesso às fichas do Hellboy</h2>
+    <label class="field"><span>Senha</span><input id="hellboy-password" type="password" required autofocus></label>
+    <small id="hellboy-access-message" role="status" class="hint warn"></small>
+    <div class="sheet-actions"><button type="submit" class="btn">Desbloquear</button><button type="button" class="btn ghost" data-act="cancel-hellboy">Cancelar</button></div>
+  </form>
+</dialog>
 <script>
 /* Estruturas básicas do banco de magias. */
 const SCHOOLS = { abj: "Abjuração", adv: "Adivinhação", con: "Conjuração", enc: "Encantamento", evo: "Evocação", ilu: "Ilusão", nec: "Necromancia", tra: "Transmutação" };
@@ -1652,6 +1663,42 @@ function warnLimits(c, before) {
   noticeTimer = setTimeout(() => { notice.textContent = ""; }, 6500);
 }
 
+function addCharacter(entry, tab = ui.tab) {
+  DB.chars.push(entry); DB.cur = entry.id; ui.activeClass = ""; ui.multiclassOpen = false; ui.confirmDel = false; ui.panel = null; ui.tab = tab;
+  save(); renderAll();
+  const name = $("#f-name");
+  if (name) { name.focus(); name.select(); }
+}
+const HELLBOY_ACCESS_KEY = KEY + "-hellboy-access";
+const HELLBOY_PASSWORD_HASH = "18d1c8122895b2eb830db203681b9c6fc13e9f4320046594ffdfb6a1bb110ee8";
+let hellboyUnlocked = false;
+try { hellboyUnlocked = sessionStorage.getItem(HELLBOY_ACCESS_KEY) === "1"; } catch {}
+$("#hellboy-access-form").addEventListener("submit", async e => {
+  e.preventDefault();
+  const dialog = $("#hellboy-access"), version = dialog.dataset.level;
+  const input = $("#hellboy-password"), message = $("#hellboy-access-message");
+  const password = input.value.normalize("NFC");
+  input.value = "";
+  let hash;
+  try {
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(password));
+    hash = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, "0")).join("");
+  } catch {
+    message.textContent = "Não foi possível verificar a senha. Abra o site por HTTPS.";
+    return;
+  }
+  if (!dialog.open || version !== dialog.dataset.level) return;
+  if (hash !== HELLBOY_PASSWORD_HASH) {
+    message.textContent = "Senha incorreta.";
+    input.focus();
+    return;
+  }
+  hellboyUnlocked = true;
+  try { sessionStorage.setItem(HELLBOY_ACCESS_KEY, "1"); } catch {}
+  dialog.close();
+  addCharacter(hellboyPreset(version), "grim");
+});
+
 // ───── Eventos ─────
 document.addEventListener("click", e => {
   const t = e.target.closest("[data-act]");
@@ -1661,16 +1708,19 @@ document.addEventListener("click", e => {
   $("#limit-notice").textContent = "";
   switch (act) {
     case "pick-char": DB.cur = t.dataset.id; ui.activeClass = ""; ui.multiclassOpen = false; ui.confirmDel = false; ui.panel = null; save(); renderAll(); break;
-    case "hellboy":
-    case "new-char": {
+    case "hellboy": {
       const version = t.dataset.level;
-      if (act === "hellboy" && !Object.hasOwn(HELLBOY, version)) break;
-      const n = act === "hellboy" ? hellboyPreset(version) : fix(newChar()); DB.chars.push(n); DB.cur = n.id; ui.activeClass = ""; ui.multiclassOpen = false; ui.confirmDel = false; ui.panel = null;
-      if (act === "hellboy") ui.tab = "grim";
-      save(); renderAll();
-      const f = $("#f-name"); if (f) { f.focus(); f.select(); }
+      if (!Object.hasOwn(HELLBOY, version)) break;
+      if (hellboyUnlocked) { addCharacter(hellboyPreset(version), "grim"); break; }
+      const dialog = $("#hellboy-access");
+      dialog.dataset.level = version;
+      $("#hellboy-access-form").reset();
+      $("#hellboy-access-message").textContent = "";
+      dialog.showModal();
       break;
     }
+    case "cancel-hellboy": $("#hellboy-access").close(); break;
+    case "new-char": addCharacter(fix(newChar())); break;
     case "lvl": setClassLevel(c, c.level + Number(t.dataset.d)); break;
     case "add-class": {
       const root = character(c), key = $("#f-new-class").value, msg = $("#multiclass-msg");
